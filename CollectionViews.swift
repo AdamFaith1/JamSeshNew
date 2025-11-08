@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 // MARK: - Songs Grid View
 struct SongsGridView: View {
@@ -134,8 +135,7 @@ struct SongsGridView: View {
         }
     }
 }
-
-// MARK: - Album Tile Cell
+// MARK: - Album Tile Cell (Enhanced with clip indicators)
 struct AlbumTileCell: View {
     let song: MTSong
     let gridColumns: Int
@@ -173,24 +173,7 @@ struct AlbumTileCell: View {
         song.parts.filter { $0.status == .complete }.count
     }
     
-    private var recentRecordingsCount: Int {
-        // Count recordings from last 7 days
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return song.parts.flatMap { $0.recordings }
-            .filter { $0.date >= weekAgo }
-            .count
-    }
-    
-    private var isHotStreak: Bool {
-        recentRecordingsCount >= 3
-    }
-    
-    private var shouldShowBadge: Bool {
-        totalRecordings > 0 || totalParts > 0
-    }
-    
     private var gradientColors: [Color] {
-        // Convert MTAlbumColor to SwiftUI Color
         let baseColor: Color
         switch song.albumColor {
         case .purple:
@@ -202,7 +185,7 @@ struct AlbumTileCell: View {
         case .orange:
             baseColor = .orange
         case .fuchsia:
-            baseColor = Color(red: 0.9, green: 0.1, blue: 0.6) // Fuchsia/hot pink
+            baseColor = Color(red: 0.9, green: 0.1, blue: 0.6)
         }
         
         return [
@@ -219,7 +202,6 @@ struct AlbumTileCell: View {
     // Helper to get artwork image from base64 or URL
     private var artworkImage: UIImage? {
         guard let artworkString = song.artworkURL, !artworkString.isEmpty else { return nil }
-        // Check if it's base64 encoded data
         if !artworkString.hasPrefix("http"), let data = Data(base64Encoded: artworkString) {
             return UIImage(data: data)
         }
@@ -231,20 +213,29 @@ struct AlbumTileCell: View {
         return URL(string: artworkString)
     }
     
+    // Part type colors for indicators
+    private func colorForPartType(_ partName: String) -> Color {
+        let lowercased = partName.lowercased()
+        if lowercased.contains("bass") { return .blue }
+        if lowercased.contains("lead") || lowercased.contains("solo") { return .pink }
+        if lowercased.contains("rhythm") || lowercased.contains("chord") { return .orange }
+        if lowercased.contains("vocal") { return .purple }
+        if lowercased.contains("drum") { return .red }
+        return .green
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: gridColumns == 3 ? 6 : 8) {
-            // Album artwork with progress ring
-            ZStack(alignment: .topTrailing) {
+            // Album artwork with clip indicators
+            ZStack(alignment: .bottom) {
                 // Main artwork
                 ZStack {
-                    // Gradient background
                     LinearGradient(
                         gradient: Gradient(colors: gradientColors),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                     
-                    // Show base64 image if available
                     if let image = artworkImage {
                         Image(uiImage: image)
                             .resizable()
@@ -252,7 +243,6 @@ struct AlbumTileCell: View {
                             .frame(maxWidth: .infinity)
                             .clipped()
                     } else if let url = artworkURL {
-                        // Otherwise try loading from URL
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .success(let image):
@@ -280,11 +270,38 @@ struct AlbumTileCell: View {
                             lineWidth: 1
                         )
                 )
+                
+                // Clip indicators at bottom
+                if totalRecordings > 0 {
+                    HStack(spacing: 2) {
+                        // Show up to 5 part type indicators as colored dots
+                        ForEach(Array(song.parts.prefix(5)), id: \.id) { part in
+                            if !part.recordings.isEmpty {
+                                Circle()
+                                    .fill(colorForPartType(part.name))
+                                    .frame(width: gridColumns == 3 ? 5 : 6, height: gridColumns == 3 ? 5 : 6)
+                            }
+                        }
+                        
+                        // Show total clip count
+                        Text("\(totalRecordings)")
+                            .font(.system(size: gridColumns == 3 ? 9 : 10, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule()
+                            .fill(Color.black.opacity(0.6))
+                            .blur(radius: 2)
+                    )
+                    .padding(.bottom, 6)
+                }
             }
             
             // Song info
             VStack(alignment: .leading, spacing: 4) {
-                // Title - full width, no indicators
+                // Title
                 Text(song.title)
                     .font(fontSize)
                     .fontWeight(.semibold)
@@ -364,10 +381,402 @@ struct AlbumTileCell: View {
                 )
         )
         .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
-        .rotationEffect(.degrees(tiltAngle)) // Tilt applied to entire card
+        .rotationEffect(.degrees(tiltAngle))
     }
+}
+// MARK: - Clips List View (for Collection tab)
+struct ClipsListView: View {
+    @ObservedObject var viewModel: MusicViewModel
+    @StateObject private var audioPlaybackManager = AudioPlaybackManager()
+    @State private var selectedClip: ClipItem?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.purple.opacity(0.6))
+                TextField("Search clips...", text: $viewModel.searchQuery)
+                    .foregroundStyle(.white)
+                
+                if !viewModel.searchQuery.isEmpty {
+                    Button {
+                        viewModel.searchQuery = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+            }
+            .padding()
+            .background(Color.white.opacity(0.05))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.purple.opacity(0.3)))
+            .cornerRadius(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            
+            // Clips list or empty state
+            if viewModel.allClips.isEmpty {
+                ClipsEmptyStateView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(viewModel.allClips) { clip in
+                            ClipCard(
+                                clip: clip,
+                                isPlaying: audioPlaybackManager.currentlyPlayingId == clip.recording.id && audioPlaybackManager.isPlaying,
+                                onTap: {
+                                    selectedClip = clip
+                                },
+                                onPlay: {
+                                    guard let fileURL = clip.recording.fileURL else { return }
+                                    audioPlaybackManager.playRecording(id: clip.recording.id, fileURL: fileURL)
+                                },
+                                audioPlaybackManager: audioPlaybackManager
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .padding(.bottom, 100)
+                }
+            }
+        }
+        .sheet(item: $selectedClip) { clip in
+            ClipDetailSheet(clip: clip, viewModel: viewModel, audioPlaybackManager: audioPlaybackManager)
+        }
     }
+}
 
+// MARK: - Clip Card
+struct ClipCard: View {
+    let clip: ClipItem
+    let isPlaying: Bool
+    let onTap: () -> Void
+    let onPlay: () -> Void
+    let audioPlaybackManager: AudioPlaybackManager
+    
+    private var artworkImage: UIImage? {
+        guard let artworkString = clip.song.artworkURL, !artworkString.isEmpty else { return nil }
+        if !artworkString.hasPrefix("http"), let data = Data(base64Encoded: artworkString) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+    
+    private var artworkURL: URL? {
+        guard let artworkString = clip.song.artworkURL, artworkString.hasPrefix("http") else { return nil }
+        return URL(string: artworkString)
+    }
+    
+    private var albumGradient: LinearGradient {
+        let baseColor: Color
+        switch clip.song.albumColor {
+        case .purple: baseColor = .purple
+        case .blue: baseColor = .blue
+        case .green: baseColor = .green
+        case .orange: baseColor = .orange
+        case .fuchsia: baseColor = Color(red: 0.9, green: 0.1, blue: 0.6)
+        }
+        
+        return LinearGradient(
+            colors: [baseColor.opacity(0.8), baseColor.opacity(0.5)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    private var duration: String {
+        guard let fileURL = clip.recording.fileURL,
+              let dur = audioPlaybackManager.getRecordingDuration(filename: fileURL) else {
+            return "--:--"
+        }
+        return audioPlaybackManager.formatTime(dur)
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Play button
+                Button(action: onPlay) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 48, height: 48)
+                        
+                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.white)
+                            .offset(x: isPlaying ? 0 : 2)
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // Album artwork
+                ZStack {
+                    albumGradient
+                    
+                    if let image = artworkImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else if let url = artworkURL {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable().scaledToFill()
+                            default:
+                                EmptyView()
+                            }
+                        }
+                    } else {
+                        Image(systemName: "music.note")
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                }
+                .frame(width: 50, height: 50)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                
+                // Clip info
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(clip.song.title)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                        
+                        Text("•")
+                            .foregroundStyle(.white.opacity(0.3))
+                        
+                        Text(clip.part.name)
+                            .font(.subheadline)
+                            .foregroundStyle(.purple.opacity(0.9))
+                            .lineLimit(1)
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Text(clip.song.artist)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                            .lineLimit(1)
+                        
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.3))
+                        
+                        Text(formatDate(clip.recording.date))
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.5))
+                        
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.3))
+                        
+                        Text(duration)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.purple.opacity(0.2), .pink.opacity(0.1)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return "Today"
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            return formatter.string(from: date)
+        }
+    }
+}
+
+// MARK: - Clip Detail Sheet
+struct ClipDetailSheet: View {
+    let clip: ClipItem
+    @ObservedObject var viewModel: MusicViewModel
+    @ObservedObject var audioPlaybackManager: AudioPlaybackManager
+    @Environment(\.dismiss) private var dismiss
+    
+    private var isPlaying: Bool {
+        audioPlaybackManager.currentlyPlayingId == clip.recording.id && audioPlaybackManager.isPlaying
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.02, green: 0.04, blue: 0.07)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 24) {
+                    // Play button
+                    Button {
+                        guard let fileURL = clip.recording.fileURL else { return }
+                        audioPlaybackManager.playRecording(id: clip.recording.id, fileURL: fileURL)
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.purple, .pink],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 80, height: 80)
+                            
+                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundStyle(.white)
+                                .offset(x: isPlaying ? 0 : 3)
+                        }
+                    }
+                    
+                    // Clip details
+                    VStack(spacing: 16) {
+                        VStack(spacing: 4) {
+                            Text(clip.song.title)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                            
+                            Text(clip.song.artist)
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.7))
+                            
+                            Text(clip.part.name)
+                                .font(.caption)
+                                .foregroundStyle(.purple)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(.purple.opacity(0.2))
+                                )
+                        }
+                        
+                        // Notes if available
+                        if !clip.recording.note.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Notes")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white.opacity(0.7))
+                                
+                                Text(clip.recording.note)
+                                    .font(.body)
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.05))
+                            )
+                        }
+                    }
+                    .padding()
+                    
+                    Spacer()
+                    
+                    // Actions
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            viewModel.selectedSongId = clip.song.id
+                            dismiss()
+                        }
+                    } label: {
+                        Text("View Song")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(14)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                }
+            }
+            .navigationTitle("Clip Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundStyle(.purple)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Clips Empty State
+struct ClipsEmptyStateView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "waveform.circle")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+                .foregroundColor(.purple.opacity(0.7))
+            
+            Text("No Clips Yet")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+            
+            Text("Record your first musical part to create a clip. Clips are reusable building blocks for your music.")
+                .font(.body)
+                .foregroundColor(.white.opacity(0.85))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+        .padding(32)
+    }
+}
 
 // MARK: - Empty State View
 struct EmptyStateView: View {

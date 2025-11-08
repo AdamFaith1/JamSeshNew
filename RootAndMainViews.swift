@@ -35,7 +35,7 @@ struct ModernTile: View {
 }
 
 
-// MARK: - Main View (Replace your existing MainView with this)
+// MARK: - Main View
 struct MainView: View {
     @ObservedObject var viewModel: MusicViewModel
     @State private var showingDeleteConfirmation = false
@@ -54,7 +54,7 @@ struct MainView: View {
                         showingSortBubble: $showingSortBubble
                     )
                 }
-                // Header with search and controls (NEW)
+                
                 // Tab content
                 TabContent(
                     viewModel: viewModel,
@@ -62,7 +62,7 @@ struct MainView: View {
                     songToDelete: $songToDelete
                 )
                 
-                // Custom bottom tab bar with elevated record button (NEW)
+                // Custom bottom tab bar with elevated record button
                 CustomTabBar(
                     activeTab: $viewModel.activeTab,
                     showingRecordSheet: $showingRecordSheet
@@ -89,7 +89,6 @@ struct MainView: View {
 }
 
 // MARK: - Tab Content (handles switching between tabs)
-// MARK: - Tab Content (handles switching between tabs)
 struct TabContent: View {
     @ObservedObject var viewModel: MusicViewModel
     @Binding var showingDeleteConfirmation: Bool
@@ -102,22 +101,24 @@ struct TabContent: View {
                 HomePlaceholderView()
                 
             case .collection:
+                // Handle both view modes in collection tab
                 if viewModel.songs.isEmpty {
                     EmptyStateView()
                 } else {
-                    SongsGridView(
-                        viewModel: viewModel,
-                        showingDeleteConfirmation: $showingDeleteConfirmation,
-                        songToDelete: $songToDelete
-                    )
+                    if viewModel.collectionViewMode == .albums {
+                        SongsGridView(
+                            viewModel: viewModel,
+                            showingDeleteConfirmation: $showingDeleteConfirmation,
+                            songToDelete: $songToDelete
+                        )
+                    } else {
+                        ClipsListView(viewModel: viewModel)
+                    }
                 }
-                
-            case .clips:
-                // Clips view has its own header, no need for HeaderView
-                ClipsGridView(viewModel: viewModel)
                 
             case .social:
                 SocialPlaceholderView()
+                
             case .studio:
                 StudioPlaceholderView()
             }
@@ -126,90 +127,11 @@ struct TabContent: View {
     }
 }
 
-// MARK: - Recording Sheet View (Placeholder for now)
-struct RecordingSheetView: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.02, green: 0.04, blue: 0.07),
-                        Color(red: 0.15, green: 0.02, blue: 0.2),
-                        Color(red: 0.02, green: 0.04, blue: 0.07)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                VStack(spacing: 24) {
-                    Image(systemName: "waveform.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.purple, .pink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    VStack(spacing: 12) {
-                        Text("Recording View")
-                            .font(.title)
-                            .bold()
-                            .foregroundStyle(.white)
-                        
-                        Text("This is where you'll build your recording UI")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.6))
-                            .multilineTextAlignment(.center)
-                    }
-                    
-                    Button {
-                        dismiss()
-                    } label: {
-                        Text("Close")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 32)
-                            .padding(.vertical, 16)
-                            .background(
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.purple, .pink],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                            )
-                    }
-                    .padding(.top, 20)
-                }
-                .padding()
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Placeholder Views
 struct StudioPlaceholderView: View {
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "music.note.house")
+            Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 60))
                 .foregroundStyle(
                     LinearGradient(
@@ -224,43 +146,16 @@ struct StudioPlaceholderView: View {
                 .bold()
                 .foregroundStyle(.white)
             
-            Text("Build your own compositions and mashups")
+            Text("Mix and layer your clips into new compositions")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
         }
         .padding()
     }
 }
 
-struct JamPlaceholderView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "person.2.wave.2")
-                .font(.system(size: 60))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.purple.opacity(0.6), .pink.opacity(0.6)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-            
-            Text("Jam Sessions Coming Soon")
-                .font(.title2)
-                .bold()
-                .foregroundStyle(.white)
-            
-            Text("Discover songs to play with friends")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-        }
-        .padding()
-    }
-}
-
-// MARK: - Placeholder Views
 struct HomePlaceholderView: View {
     var body: some View {
         VStack(spacing: 16) {

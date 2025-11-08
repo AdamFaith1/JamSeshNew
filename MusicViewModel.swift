@@ -24,10 +24,12 @@ final class MusicViewModel: ObservableObject {
     // Grid and sort settings
     @Published var gridColumns: Int = 2
     @Published var sortOption: SortOption = .recentlyUpdated
+    @Published var collectionViewMode: CollectionViewMode = .albums
 
     let loopCatalog = LoopCatalogService()
     
-    enum Tab { case home, collection, clips, social, studio }
+    enum Tab { case home, collection, social, studio }
+    enum CollectionViewMode { case albums, clips }
     
     enum SortOption {
         case recentlyUpdated, titleAsc, titleDesc, artistAsc, artistDesc, dateAdded
@@ -82,6 +84,36 @@ final class MusicViewModel: ObservableObject {
         }
         
         return filtered
+    }
+    
+    // MARK: - Clips helpers
+    var allClips: [ClipItem] {
+        var clips: [ClipItem] = []
+        for song in songs {
+            for part in song.parts {
+                for recording in part.recordings {
+                    clips.append(ClipItem(
+                        recording: recording,
+                        song: song,
+                        part: part
+                    ))
+                }
+            }
+        }
+        
+        // Sort by date (most recent first)
+        clips.sort { $0.recording.date > $1.recording.date }
+        
+        // Apply search filter
+        if !searchQuery.isEmpty {
+            clips = clips.filter {
+                $0.song.title.localizedCaseInsensitiveContains(searchQuery) ||
+                $0.song.artist.localizedCaseInsensitiveContains(searchQuery) ||
+                $0.part.name.localizedCaseInsensitiveContains(searchQuery)
+            }
+        }
+        
+        return clips
     }
 
     func togglePart(_ partId: String) {
@@ -315,3 +347,17 @@ final class MusicViewModel: ObservableObject {
     }
 }
 
+// MARK: - ClipItem for clips view
+struct ClipItem: Identifiable {
+    let id: String
+    let recording: MTRecording
+    let song: MTSong
+    let part: MTSongPart
+    
+    init(recording: MTRecording, song: MTSong, part: MTSongPart) {
+        self.id = recording.id
+        self.recording = recording
+        self.song = song
+        self.part = part
+    }
+}

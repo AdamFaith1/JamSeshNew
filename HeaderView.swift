@@ -18,26 +18,32 @@ struct HeaderView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(viewModel.activeTab == .collection ? "My Music" :
-                         viewModel.activeTab == .clips ? "Loop Catalog" :
                          viewModel.activeTab == .studio ? "Studio" : "Jam")
                         .font(.title2).bold()
                         .foregroundStyle(LinearGradient(colors: [.purple.opacity(0.8), .pink.opacity(0.8)], startPoint: .leading, endPoint: .trailing))
                     
                     if viewModel.activeTab == .collection {
-                        Text("\(viewModel.filteredSongs.count) songs • \(viewModel.filteredSongs.filter{$0.isFullyLearned}.count) ready")
-                            .font(.caption).foregroundStyle(.purple.opacity(0.6))
-                    } else if viewModel.activeTab == .clips {
-                        Text("\(viewModel.loopCatalog.filteredLoops.count) loops • \(viewModel.loopCatalog.availablePartTypes.count) types")
-                            .font(.caption).foregroundStyle(.purple.opacity(0.6))
+                        if viewModel.collectionViewMode == .albums {
+                            Text("\(viewModel.filteredSongs.count) songs • \(viewModel.filteredSongs.filter{$0.isFullyLearned}.count) ready")
+                                .font(.caption).foregroundStyle(.purple.opacity(0.6))
+                        } else {
+                            Text("\(viewModel.allClips.count) clips • \(viewModel.songs.count) songs")
+                                .font(.caption).foregroundStyle(.purple.opacity(0.6))
+                        }
                     }
                 }
                 Spacer()
                 
-                // Sort button (available on both Collection and Loops)
+                // View mode toggle (only on Collection)
+                if viewModel.activeTab == .collection {
+                    ViewModeToggle(viewModel: viewModel)
+                }
+                
+                // Sort button
                 SortButton(viewModel: viewModel, showingSortBubble: $showingSortBubble)
                 
-                // Grid toggle button (only on Collection)
-                if viewModel.activeTab == .collection {
+                // Grid toggle button (only on Collection Albums view)
+                if viewModel.activeTab == .collection && viewModel.collectionViewMode == .albums {
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             viewModel.gridColumns = viewModel.gridColumns == 2 ? 3 : 2
@@ -55,6 +61,66 @@ struct HeaderView: View {
             .padding(.horizontal)
         }
         .padding(.top)
+    }
+}
+
+// MARK: - View Mode Toggle
+struct ViewModeToggle: View {
+    @ObservedObject var viewModel: MusicViewModel
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            // Albums button
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    viewModel.collectionViewMode = .albums
+                }
+            } label: {
+                Image(systemName: "square.grid.2x2.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(viewModel.collectionViewMode == .albums ? .white : .white.opacity(0.5))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        viewModel.collectionViewMode == .albums ?
+                            AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            ) :
+                            AnyShapeStyle(Color.clear)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            
+            // Clips button
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    viewModel.collectionViewMode = .clips
+                }
+            } label: {
+                Image(systemName: "waveform")
+                    .font(.system(size: 14))
+                    .foregroundStyle(viewModel.collectionViewMode == .clips ? .white : .white.opacity(0.5))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        viewModel.collectionViewMode == .clips ?
+                            AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            ) :
+                            AnyShapeStyle(Color.clear)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .padding(4)
+        .background(Color.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
