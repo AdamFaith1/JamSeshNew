@@ -167,10 +167,19 @@ final class MusicViewModel: ObservableObject {
             let descriptor = FetchDescriptor<SDSong>(predicate: #Predicate { $0.id == songId })
             if let sdSong = try context.fetch(descriptor).first,
                let sdPart = sdSong.parts.first(where: { $0.id == partId }) {
-                let sdRec = SDRecording(id: recording.id, typeRaw: recording.type.raw, date: recording.date, note: recording.note, fileURL: recording.fileURL)
+                let sdRec = SDRecording(
+                    id: recording.id,
+                    typeRaw: recording.type.raw,
+                    date: recording.date,
+                    note: recording.note,
+                    fileURL: recording.fileURL,
+                    isLoop: recording.isLoop,
+                    loopStartTime: recording.loopStartTime,
+                    loopEndTime: recording.loopEndTime
+                )
                 sdPart.recordings.append(sdRec)
                 try context.save()
-                // mirror in memory
+                
                 if let sIdx = songs.firstIndex(where: { $0.id == songId }),
                    let pIdx = songs[sIdx].parts.firstIndex(where: { $0.id == partId }) {
                     songs[sIdx].parts[pIdx].recordings.append(recording)
@@ -178,11 +187,11 @@ final class MusicViewModel: ObservableObject {
                     let song = songs[sIdx]
                     let part = songs[sIdx].parts[pIdx]
                     await loopCatalog.createLoopFromRecording(
-                                        context: context,
-                                        recording: recording,
-                                        song: song,
-                                        part: part
-                                        )
+                        context: context,
+                        recording: recording,
+                        song: song,
+                        part: part
+                    )
                 }
                 showNotification("Saved recording to \(sdSong.title) – \(sdPart.name)")
             }

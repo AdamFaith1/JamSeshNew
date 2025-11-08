@@ -9,11 +9,13 @@ import SwiftData
 
 // MARK: - Loops Grid View
 // MARK: - Clips Grid View
+
 struct ClipsGridView: View {
     @ObservedObject var viewModel: MusicViewModel
     @Environment(\.modelContext) private var modelContext
     @State private var showingFilters = false
     @State private var selectedLoop: MTLoop?
+    @State private var selectedLoopForEdit: MTLoop?  // NEW
     
     private var loopCatalog: LoopCatalogService { viewModel.loopCatalog }
     
@@ -149,6 +151,16 @@ struct ClipsGridView: View {
                                     Task {
                                         await loopCatalog.toggleStar(context: modelContext, loopId: loop.id)
                                     }
+                                },
+                                onToggleLoop: {
+                                    Task {
+                                        var updatedLoop = loop
+                                        updatedLoop.isLoop = !updatedLoop.isLoop
+                                        await loopCatalog.updateLoop(context: modelContext, loop: updatedLoop)
+                                    }
+                                },
+                                onEditLoop: {
+                                    selectedLoopForEdit = loop
                                 }
                             )
                         }
@@ -164,6 +176,26 @@ struct ClipsGridView: View {
         }
         .sheet(item: $selectedLoop) { loop in
             LoopDetailSheet(loop: loop, loopCatalog: loopCatalog, viewModel: viewModel)
+        }
+        .sheet(item: $selectedLoopForEdit) { loop in
+            // Convert MTLoop back to recording
+            if let recording = viewModel.songs
+                .flatMap({ $0.parts.flatMap({ $0.recordings }) })
+                .first(where: { $0.id == loop.recordingId }) {
+                LoopEditorSheet(recording: .constant(recording)) { updatedRecording in
+                    // Save the updated recording with loop points
+                    Task {
+                        if let song = viewModel.songs.first(where: { song in
+                            song.parts.contains(where: { part in
+                                part.recordings.contains(where: { $0.id == recording.id })
+                            })
+                        }),
+                        let part = song.parts.first(where: { $0.recordings.contains(where: { $0.id == recording.id }) }) {
+                            await viewModel.saveRecording(context: modelContext, songId: song.id, partId: part.id, recording: updatedRecording)
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -182,11 +214,12 @@ struct LoopCard: View {
     let loop: MTLoop
     let onTap: () -> Void
     let onToggleStar: () -> Void
+    let onToggleLoop: () -> Void
+    let onEditLoop: () -> Void
     
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 12) {
-                // Header with star
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(loop.songTitle)
@@ -208,9 +241,22 @@ struct LoopCard: View {
                             .font(.caption)
                             .foregroundStyle(loop.isStarred ? .yellow : .white.opacity(0.5))
                     }
+                    
+                    Button(action: onToggleLoop) {
+                        Image(systemName: loop.isLoop ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle")
+                            .font(.caption)
+                            .foregroundStyle(loop.isLoop ? .green : .white.opacity(0.5))
+                    }
+                    
+                    if loop.isLoop {
+                        Button(action: onEditLoop) {
+                            Image(systemName: "waveform.badge.magnifyingglass")
+                                .font(.caption)
+                                .foregroundStyle(.purple)
+                        }
+                    }
                 }
                 
-                // Part type badge
                 HStack {
                     Text(loop.partType)
                         .font(.caption)
@@ -231,13 +277,11 @@ struct LoopCard: View {
                     
                     Spacer()
                     
-                    // Duration
                     Text(formatDuration(loop.lengthSeconds))
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
-                // Metadata chips
                 HStack(spacing: 6) {
                     if let bpm = loop.bpm {
                         MetadataChip(icon: "metronome", text: "\(bpm)", color: .orange)
@@ -252,7 +296,6 @@ struct LoopCard: View {
                     }
                 }
                 
-                // Tags (max 2 visible)
                 if !loop.tags.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(Array(loop.tags.prefix(2)), id: \.self) { tag in

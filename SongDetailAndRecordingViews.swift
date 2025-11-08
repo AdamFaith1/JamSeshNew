@@ -919,12 +919,15 @@ struct CleanPartCard: View {
 }
 
 // MARK: - Minimal Recording Row
+
 struct MinimalRecordingRow: View {
     let recording: MTRecording
     let isCurrentlyPlaying: Bool
     let onPlay: () -> Void
     let onDelete: () -> Void
     let audioPlaybackManager: AudioPlaybackManager
+    
+    @State private var showingLoopEditor = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -964,6 +967,14 @@ struct MinimalRecordingRow: View {
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.5))
                     }
+                    
+                    if recording.isLoop {
+                        Text("•")
+                            .foregroundStyle(.white.opacity(0.3))
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                    }
                 }
                 
                 if !recording.note.isEmpty {
@@ -975,6 +986,17 @@ struct MinimalRecordingRow: View {
             }
             
             Spacer()
+            
+            if recording.isLoop {
+                Button {
+                    showingLoopEditor = true
+                } label: {
+                    Image(systemName: "waveform.badge.magnifyingglass")
+                        .font(.caption)
+                        .foregroundStyle(.purple)
+                        .frame(width: 32, height: 32)
+                }
+            }
             
             Button(action: onDelete) {
                 Image(systemName: "trash")
@@ -988,6 +1010,11 @@ struct MinimalRecordingRow: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.03))
         )
+        .sheet(isPresented: $showingLoopEditor) {
+            LoopEditorSheet(recording: .constant(recording)) { updatedRecording in
+                // Note: You'll need to pass an update callback from parent
+            }
+        }
     }
 }
 

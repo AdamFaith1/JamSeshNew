@@ -12,7 +12,10 @@ struct JamSeshApp: App {
             SDSong.self,
             SDSongPart.self,
             SDRecording.self,
-            SDLoop.self
+            SDLoop.self,
+            SDComposition.self, 
+            SDCompositionTrack.self
+            
         ])
     }
 }

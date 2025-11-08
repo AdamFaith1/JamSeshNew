@@ -89,6 +89,7 @@ struct MainView: View {
 }
 
 // MARK: - Tab Content (handles switching between tabs)
+
 struct TabContent: View {
     @ObservedObject var viewModel: MusicViewModel
     @Binding var showingDeleteConfirmation: Bool
@@ -101,7 +102,6 @@ struct TabContent: View {
                 HomePlaceholderView()
                 
             case .collection:
-                // Handle both view modes in collection tab
                 if viewModel.songs.isEmpty {
                     EmptyStateView()
                 } else {
@@ -120,7 +120,7 @@ struct TabContent: View {
                 SocialPlaceholderView()
                 
             case .studio:
-                StudioPlaceholderView()
+                StudioComposerView(viewModel: viewModel)  // CHANGED THIS LINE
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

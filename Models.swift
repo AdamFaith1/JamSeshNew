@@ -46,13 +46,19 @@ final class SDRecording {
     var date: Date
     var note: String
     var fileURL: String?
+    var isLoop: Bool  // NEW
+    var loopStartTime: Double?  // NEW
+    var loopEndTime: Double?
 
-    init(id: String = UUID().uuidString, typeRaw: String, date: Date, note: String, fileURL: String?) {
+    init(id: String = UUID().uuidString, typeRaw: String, date: Date, note: String, fileURL: String?, isLoop: Bool = false, loopStartTime: Double? = nil, loopEndTime: Double? = nil) {
         self.id = id
         self.typeRaw = typeRaw
         self.date = date
         self.note = note
         self.fileURL = fileURL
+        self.isLoop = isLoop
+        self.loopStartTime = loopStartTime
+        self.loopEndTime = loopEndTime
     }
 }
 
@@ -132,6 +138,9 @@ struct MTRecording: Identifiable, Codable, Equatable {
     var date: Date
     var note: String
     var fileURL: String?
+    var isLoop: Bool = false
+    var loopStartTime: Double? = nil
+    var loopEndTime: Double? = nil
 
     enum RecordingType: String, Codable { case video, audio }
 }
@@ -212,6 +221,9 @@ extension MTRecording {
         date = sd.date
         note = sd.note
         fileURL = sd.fileURL
+        isLoop = sd.isLoop
+        loopStartTime = sd.loopStartTime
+        loopEndTime = sd.loopEndTime
     }
 }
 

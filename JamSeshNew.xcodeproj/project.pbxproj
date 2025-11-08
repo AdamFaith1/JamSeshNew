@@ -27,6 +27,10 @@
 		7C284E6B2EBEE54800E01278 /* MediaPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4D2EBEE54700E01278 /* MediaPickerButton.swift */; };
 		7C284E6C2EBEE54800E01278 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E522EBEE54700E01278 /* RecordingView.swift */; };
 		7C284E6D2EBEE54800E01278 /* Assets 2.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7C284E422EBEE54700E01278 /* Assets 2.xcassets */; };
+		7C9A75382EBFE9CA00F6F261 /* CompositionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A75372EBFE9C300F6F261 /* CompositionModels.swift */; };
+		7C9A753A2EBFE9DA00F6F261 /* AudioMixingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A75392EBFE9D600F6F261 /* AudioMixingService.swift */; };
+		7C9A753C2EBFE9E800F6F261 /* LoopEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A753B2EBFE9E500F6F261 /* LoopEditor.swift */; };
+		7C9A753E2EBFEA0400F6F261 /* StudioComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A753D2EBFEA0100F6F261 /* StudioComposer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +56,10 @@
 		7C284E552EBEE54700E01278 /* SongDetailAndRecordingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailAndRecordingViews.swift; sourceTree = "<group>"; };
 		7C284E572EBEE54700E01278 /* SongSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSearchService.swift; sourceTree = "<group>"; };
 		7C284E6F2EBEE56500E01278 /* JamSeshNew-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "JamSeshNew-Bridging-Header.h"; sourceTree = "<group>"; };
+		7C9A75372EBFE9C300F6F261 /* CompositionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositionModels.swift; sourceTree = "<group>"; };
+		7C9A75392EBFE9D600F6F261 /* AudioMixingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMixingService.swift; sourceTree = "<group>"; };
+		7C9A753B2EBFE9E500F6F261 /* LoopEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopEditor.swift; sourceTree = "<group>"; };
+		7C9A753D2EBFEA0100F6F261 /* StudioComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioComposer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -90,6 +98,10 @@
 				7C284E4C2EBEE54700E01278 /* LoopsView.swift */,
 				7C284E4D2EBEE54700E01278 /* MediaPickerButton.swift */,
 				7C284E4E2EBEE54700E01278 /* Models.swift */,
+				7C9A75372EBFE9C300F6F261 /* CompositionModels.swift */,
+				7C9A75392EBFE9D600F6F261 /* AudioMixingService.swift */,
+				7C9A753B2EBFE9E500F6F261 /* LoopEditor.swift */,
+				7C9A753D2EBFEA0100F6F261 /* StudioComposer.swift */,
 				7C284E4F2EBEE54700E01278 /* MusicViewModel.swift */,
 				7C284E502EBEE54700E01278 /* RecordingComponents.swift */,
 				7C284E512EBEE54700E01278 /* RecordingPickerSheets.swift */,
@@ -186,12 +198,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7C9A753C2EBFE9E800F6F261 /* LoopEditor.swift in Sources */,
 				7C284E582EBEE54800E01278 /* HeaderView.swift in Sources */,
 				7C284E592EBEE54800E01278 /* RecordingPickerSheets.swift in Sources */,
 				7C284E5A2EBEE54800E01278 /* RecordingComponents.swift in Sources */,
 				7C284E5B2EBEE54800E01278 /* LoopsView.swift in Sources */,
 				7C284E5C2EBEE54800E01278 /* CollectionViews.swift in Sources */,
 				7C284E5D2EBEE54800E01278 /* Item 2.swift in Sources */,
+				7C9A75382EBFE9CA00F6F261 /* CompositionModels.swift in Sources */,
 				7C284E5E2EBEE54800E01278 /* DiscographyApp.swift in Sources */,
 				7C284E5F2EBEE54800E01278 /* Models.swift in Sources */,
 				7C284E622EBEE54800E01278 /* LoopCatalogService.swift in Sources */,
@@ -205,6 +219,8 @@
 				7C284E6A2EBEE54800E01278 /* GlobalOverlays.swift in Sources */,
 				7C284E6B2EBEE54800E01278 /* MediaPickerButton.swift in Sources */,
 				7C284E6C2EBEE54800E01278 /* RecordingView.swift in Sources */,
+				7C9A753E2EBFEA0400F6F261 /* StudioComposer.swift in Sources */,
+				7C9A753A2EBFE9DA00F6F261 /* AudioMixingService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

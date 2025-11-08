@@ -15,6 +15,9 @@ struct RecordingView: View {
     @Environment(\.modelContext) private var modelContext
     @ObservedObject var viewModel: MusicViewModel
     @StateObject private var audioRecorder = AudioRecorder()
+    @StateObject private var audioMixing = AudioMixingService()
+    @State private var backingTrackRecording: MTRecording?
+    @State private var showingBackingTrackPicker = false
     
     // Recording state
     @State private var recordingPhase: RecordingPhase = .ready
@@ -74,6 +77,16 @@ struct RecordingView: View {
                         .foregroundStyle(.white)
                     
                     Spacer()
+                    
+                    Button {
+                        showingBackingTrackPicker = true
+                    } label: {
+                        Image(systemName: backingTrackRecording != nil ? "music.note.list" : "music.note")
+                            .font(.title2)
+                            .foregroundStyle(backingTrackRecording != nil ? .green : .white.opacity(0.7))
+                    }
+                    .disabled(recordingPhase == .recording)
+                    .opacity(recordingPhase == .recording ? 0.3 : 1.0)
                     
                     Button {
                         showingTools = true
@@ -349,6 +362,12 @@ struct RecordingView: View {
                 .presentationDetents([.height(280)])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingBackingTrackPicker) {
+            ClipPickerSheet(viewModel: viewModel) { recording, song, part in
+                backingTrackRecording = recording
+                showingBackingTrackPicker = false
+            }
+        }
         .animation(.easeInOut(duration: 0.2), value: recordingPhase)
         .animation(.easeInOut(duration: 0.2), value: isCountingDown)
     }
@@ -407,12 +426,19 @@ struct RecordingView: View {
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     audioRecorder.startRecording()
+                    
+                    if let backing = backingTrackRecording, let fileURL = backing.fileURL {
+                           audioMixing.startBackingTrack(fileURL: fileURL, loop: backing.isLoop)
+                       }
+                    
                 }
             }
         }
     }
     
     private func handleDiscard() {
+        audioMixing.stopBackingTrack()
+        
         if audioRecorder.isPlaying {
             audioRecorder.stopPlaying()
         }
@@ -434,6 +460,8 @@ struct RecordingView: View {
     }
     
     private func handleSave() {
+        audioMixing.stopBackingTrack()
+        
         guard let song = selectedSong,
               let part = selectedPart,
               let recordingURL = audioRecorder.lastRecordingURL else { return }
