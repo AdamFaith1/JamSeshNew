@@ -6,8 +6,52 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7C284E582EBEE54800E01278 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E482EBEE54700E01278 /* HeaderView.swift */; };
+		7C284E592EBEE54800E01278 /* RecordingPickerSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E512EBEE54700E01278 /* RecordingPickerSheets.swift */; };
+		7C284E5A2EBEE54800E01278 /* RecordingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E502EBEE54700E01278 /* RecordingComponents.swift */; };
+		7C284E5B2EBEE54800E01278 /* LoopsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4C2EBEE54700E01278 /* LoopsView.swift */; };
+		7C284E5C2EBEE54800E01278 /* CollectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E432EBEE54700E01278 /* CollectionViews.swift */; };
+		7C284E5D2EBEE54800E01278 /* Item 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4A2EBEE54700E01278 /* Item 2.swift */; };
+		7C284E5E2EBEE54800E01278 /* DiscographyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E462EBEE54700E01278 /* DiscographyApp.swift */; };
+		7C284E5F2EBEE54800E01278 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4E2EBEE54700E01278 /* Models.swift */; };
+		7C284E622EBEE54800E01278 /* LoopCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4B2EBEE54700E01278 /* LoopCatalogService.swift */; };
+		7C284E632EBEE54800E01278 /* AddSongSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E412EBEE54700E01278 /* AddSongSheet.swift */; };
+		7C284E642EBEE54800E01278 /* SongDetailAndRecordingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E552EBEE54700E01278 /* SongDetailAndRecordingViews.swift */; };
+		7C284E652EBEE54800E01278 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E542EBEE54700E01278 /* SharedComponents.swift */; };
+		7C284E662EBEE54800E01278 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E452EBEE54700E01278 /* CustomTabBar.swift */; };
+		7C284E672EBEE54800E01278 /* MusicViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4F2EBEE54700E01278 /* MusicViewModel.swift */; };
+		7C284E682EBEE54800E01278 /* RootAndMainViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E532EBEE54700E01278 /* RootAndMainViews.swift */; };
+		7C284E692EBEE54800E01278 /* SongSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E572EBEE54700E01278 /* SongSearchService.swift */; };
+		7C284E6A2EBEE54800E01278 /* GlobalOverlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E472EBEE54700E01278 /* GlobalOverlays.swift */; };
+		7C284E6B2EBEE54800E01278 /* MediaPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E4D2EBEE54700E01278 /* MediaPickerButton.swift */; };
+		7C284E6C2EBEE54800E01278 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C284E522EBEE54700E01278 /* RecordingView.swift */; };
+		7C284E6D2EBEE54800E01278 /* Assets 2.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7C284E422EBEE54700E01278 /* Assets 2.xcassets */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		7C284E312EBEE3B800E01278 /* JamSeshNew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JamSeshNew.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7C284E412EBEE54700E01278 /* AddSongSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSongSheet.swift; sourceTree = "<group>"; };
+		7C284E422EBEE54700E01278 /* Assets 2.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets 2.xcassets"; sourceTree = "<group>"; };
+		7C284E432EBEE54700E01278 /* CollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViews.swift; sourceTree = "<group>"; };
+		7C284E452EBEE54700E01278 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
+		7C284E462EBEE54700E01278 /* DiscographyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscographyApp.swift; sourceTree = "<group>"; };
+		7C284E472EBEE54700E01278 /* GlobalOverlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalOverlays.swift; sourceTree = "<group>"; };
+		7C284E482EBEE54700E01278 /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderView.swift; sourceTree = "<group>"; };
+		7C284E4A2EBEE54700E01278 /* Item 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Item 2.swift"; sourceTree = "<group>"; };
+		7C284E4B2EBEE54700E01278 /* LoopCatalogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopCatalogService.swift; sourceTree = "<group>"; };
+		7C284E4C2EBEE54700E01278 /* LoopsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopsView.swift; sourceTree = "<group>"; };
+		7C284E4D2EBEE54700E01278 /* MediaPickerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPickerButton.swift; sourceTree = "<group>"; };
+		7C284E4E2EBEE54700E01278 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		7C284E4F2EBEE54700E01278 /* MusicViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicViewModel.swift; sourceTree = "<group>"; };
+		7C284E502EBEE54700E01278 /* RecordingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingComponents.swift; sourceTree = "<group>"; };
+		7C284E512EBEE54700E01278 /* RecordingPickerSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPickerSheets.swift; sourceTree = "<group>"; };
+		7C284E522EBEE54700E01278 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		7C284E532EBEE54700E01278 /* RootAndMainViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootAndMainViews.swift; sourceTree = "<group>"; };
+		7C284E542EBEE54700E01278 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
+		7C284E552EBEE54700E01278 /* SongDetailAndRecordingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailAndRecordingViews.swift; sourceTree = "<group>"; };
+		7C284E572EBEE54700E01278 /* SongSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSearchService.swift; sourceTree = "<group>"; };
+		7C284E6F2EBEE56500E01278 /* JamSeshNew-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "JamSeshNew-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -34,6 +78,27 @@
 			children = (
 				7C284E332EBEE3B800E01278 /* JamSeshNew */,
 				7C284E322EBEE3B800E01278 /* Products */,
+				7C284E412EBEE54700E01278 /* AddSongSheet.swift */,
+				7C284E422EBEE54700E01278 /* Assets 2.xcassets */,
+				7C284E432EBEE54700E01278 /* CollectionViews.swift */,
+				7C284E452EBEE54700E01278 /* CustomTabBar.swift */,
+				7C284E462EBEE54700E01278 /* DiscographyApp.swift */,
+				7C284E472EBEE54700E01278 /* GlobalOverlays.swift */,
+				7C284E482EBEE54700E01278 /* HeaderView.swift */,
+				7C284E4A2EBEE54700E01278 /* Item 2.swift */,
+				7C284E4B2EBEE54700E01278 /* LoopCatalogService.swift */,
+				7C284E4C2EBEE54700E01278 /* LoopsView.swift */,
+				7C284E4D2EBEE54700E01278 /* MediaPickerButton.swift */,
+				7C284E4E2EBEE54700E01278 /* Models.swift */,
+				7C284E4F2EBEE54700E01278 /* MusicViewModel.swift */,
+				7C284E502EBEE54700E01278 /* RecordingComponents.swift */,
+				7C284E512EBEE54700E01278 /* RecordingPickerSheets.swift */,
+				7C284E522EBEE54700E01278 /* RecordingView.swift */,
+				7C284E532EBEE54700E01278 /* RootAndMainViews.swift */,
+				7C284E542EBEE54700E01278 /* SharedComponents.swift */,
+				7C284E552EBEE54700E01278 /* SongDetailAndRecordingViews.swift */,
+				7C284E572EBEE54700E01278 /* SongSearchService.swift */,
+				7C284E6F2EBEE56500E01278 /* JamSeshNew-Bridging-Header.h */,
 			);
 			sourceTree = "<group>";
 		};
@@ -82,6 +147,7 @@
 				TargetAttributes = {
 					7C284E302EBEE3B800E01278 = {
 						CreatedOnToolsVersion = 26.1;
+						LastSwiftMigration = 2610;
 					};
 				};
 			};
@@ -109,6 +175,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7C284E6D2EBEE54800E01278 /* Assets 2.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +186,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7C284E582EBEE54800E01278 /* HeaderView.swift in Sources */,
+				7C284E592EBEE54800E01278 /* RecordingPickerSheets.swift in Sources */,
+				7C284E5A2EBEE54800E01278 /* RecordingComponents.swift in Sources */,
+				7C284E5B2EBEE54800E01278 /* LoopsView.swift in Sources */,
+				7C284E5C2EBEE54800E01278 /* CollectionViews.swift in Sources */,
+				7C284E5D2EBEE54800E01278 /* Item 2.swift in Sources */,
+				7C284E5E2EBEE54800E01278 /* DiscographyApp.swift in Sources */,
+				7C284E5F2EBEE54800E01278 /* Models.swift in Sources */,
+				7C284E622EBEE54800E01278 /* LoopCatalogService.swift in Sources */,
+				7C284E632EBEE54800E01278 /* AddSongSheet.swift in Sources */,
+				7C284E642EBEE54800E01278 /* SongDetailAndRecordingViews.swift in Sources */,
+				7C284E652EBEE54800E01278 /* SharedComponents.swift in Sources */,
+				7C284E662EBEE54800E01278 /* CustomTabBar.swift in Sources */,
+				7C284E672EBEE54800E01278 /* MusicViewModel.swift in Sources */,
+				7C284E682EBEE54800E01278 /* RootAndMainViews.swift in Sources */,
+				7C284E692EBEE54800E01278 /* SongSearchService.swift in Sources */,
+				7C284E6A2EBEE54800E01278 /* GlobalOverlays.swift in Sources */,
+				7C284E6B2EBEE54800E01278 /* MediaPickerButton.swift in Sources */,
+				7C284E6C2EBEE54800E01278 /* RecordingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,16 +337,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2J29537JR5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "JamSesh uses your camera to record video takes and performance clips.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "amSesh needs access to your microphone to record audio loops and practice sessions.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "amSesh needs access to save exported loops and mixes to your library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -272,6 +363,8 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "JamSeshNew-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -283,16 +376,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2J29537JR5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "JamSesh uses your camera to record video takes and performance clips.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "amSesh needs access to your microphone to record audio loops and practice sessions.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "amSesh needs access to save exported loops and mixes to your library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -304,6 +402,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "JamSeshNew-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

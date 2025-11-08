@@ -1,8 +1,8 @@
 //
 //  Item.swift
-//  JamSeshNew
+//  JamSesh
 //
-//  Created by Adam Faith on 2025-11-07.
+//  Created by Adam Faith on 2025-10-29.
 //
 
 import Foundation
