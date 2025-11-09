@@ -16,8 +16,8 @@ struct ClipsGridView: View {
     @State private var showingFilters = false
     @State private var selectedLoop: MTLoop?
     @State private var selectedLoopForEdit: MTLoop?  // NEW
+    @ObservedObject private var loopCatalog: LoopCatalogService
     
-    private var loopCatalog: LoopCatalogService { viewModel.loopCatalog }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -51,12 +51,12 @@ struct ClipsGridView: View {
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.purple.opacity(0.6))
-                    TextField("Search loops...", text: Binding(get: { loopCatalog.searchQuery }, set: { loopCatalog.searchQuery = $0 }))
+                    TextField("Search loops...", text: $loopCatalog.searchQuery)
                         .foregroundStyle(.white)
                     
                     if !loopCatalog.searchQuery.isEmpty {
                         Button {
-                            loopCatalog.searchQuery = ""
+                            viewModel.loopCatalog.searchQuery = ""
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.white.opacity(0.5))
@@ -496,10 +496,10 @@ struct LoopFilterSheet: View {
                         // Special Filters
                         FilterSection(title: "Special") {
                             VStack(spacing: 12) {
-                                Toggle("Starred Only", isOn: Binding(get: { loopCatalog.showOnlyStarred }, set: { loopCatalog.showOnlyStarred = $0 }))
+                                Toggle("Starred Only", isOn: $loopCatalog.showOnlyStarred)
                                     .tint(.yellow)
-                                
-                                Toggle("Imported Only", isOn: Binding(get: { loopCatalog.showOnlyImported }, set: { loopCatalog.showOnlyImported = $0 }))
+
+                                Toggle("Imported Only", isOn: $loopCatalog.showOnlyImported)
                                     .tint(.pink)
                             }
                             .foregroundStyle(.white)

@@ -7,6 +7,7 @@
 
 import AVFoundation
 import SwiftUI
+internal import Combine
 
 @MainActor
 final class AudioMixingService: NSObject, ObservableObject {
@@ -14,6 +15,7 @@ final class AudioMixingService: NSObject, ObservableObject {
     
     private var backingPlayer: AVAudioPlayer?
     private var recorder: AVAudioRecorder?
+    private var trackPlayers: [String: AVAudioPlayer] = [:]
     
     // Play a clip as backing track during recording
     func startBackingTrack(fileURL: String, loop: Bool = false) {
@@ -157,5 +159,47 @@ final class AudioMixingService: NSObject, ObservableObject {
         }
         
         return waveformData
+    }
+    func playMultipleTracks(tracks: [(id: String, fileURL: String, volume: Float, loop: Bool, startTime: Double)]) {
+        // Stop any existing playback
+        stopAllTracks()
+        
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        
+        // Get the device current time once for synchronization
+        let baseTime = AVAudioSession.sharedInstance().outputLatency + ProcessInfo.processInfo.systemUptime
+        
+        for track in tracks {
+            let url = docs.appendingPathComponent(track.fileURL)
+            
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                print("❌ Track file not found: \(url.path)")
+                continue
+            }
+            
+            do {
+                let player = try AVAudioPlayer(contentsOf: url)
+                player.numberOfLoops = track.loop ? -1 : 0
+                player.volume = track.volume
+                player.prepareToPlay()
+                
+                // Schedule all tracks relative to the same base time
+                // Add small buffer (0.1s) to ensure all players are prepared
+                let playTime = baseTime + 0.1 + track.startTime
+                player.play(atTime: playTime)
+                
+                trackPlayers[track.id] = player
+                print("✅ Scheduled track: \(track.id) at +\(track.startTime)s")
+            } catch {
+                print("❌ Failed to play track: \(error)")
+            }
+        }
+    }
+
+    func stopAllTracks() {
+        for player in trackPlayers.values {
+            player.stop()
+        }
+        trackPlayers.removeAll()
     }
 }

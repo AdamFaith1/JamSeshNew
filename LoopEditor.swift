@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFoundation
+internal import Combine
 
 struct LoopEditorSheet: View {
     @Binding var recording: MTRecording

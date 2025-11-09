@@ -80,12 +80,13 @@ final class SDLoop {
     var isImported: Bool
     var sharedBy: String?
     var isStarred: Bool
+    var isLoop: Bool
     
     init(id: String = UUID().uuidString, recordingId: String, songId: String,
          songTitle: String, songArtist: String, partType: String,
          lengthSeconds: Double, dateCreated: Date, bpm: Int? = nil,
          key: String? = nil, tagsArray: [String] = [], fileURL: String,
-         isImported: Bool = false, sharedBy: String? = nil, isStarred: Bool = false) {
+         isImported: Bool = false, sharedBy: String? = nil, isStarred: Bool = false, isLoop: Bool = true) {
         self.id = id
         self.recordingId = recordingId
         self.songId = songId
@@ -101,6 +102,7 @@ final class SDLoop {
         self.isImported = isImported
         self.sharedBy = sharedBy
         self.isStarred = isStarred
+        self.isLoop = isLoop
     }
 }
 
@@ -162,6 +164,7 @@ struct MTLoop: Identifiable, Codable, Equatable {
     var isImported: Bool
     var sharedBy: String?
     var isStarred: Bool
+    var isLoop: Bool = true
 }
 
 enum MTAlbumColor: String, Codable { case purple, blue, orange, green, fuchsia }
@@ -203,6 +206,7 @@ extension MTLoop {
         isImported = sd.isImported
         sharedBy = sd.sharedBy
         isStarred = sd.isStarred
+        isLoop = sd.isLoop
     }
 }
 extension MTSongPart {

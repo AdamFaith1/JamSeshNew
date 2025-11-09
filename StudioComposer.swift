@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct StudioComposerView: View {
     @ObservedObject var viewModel: MusicViewModel
@@ -19,6 +20,7 @@ struct StudioComposerView: View {
     @State private var isPlaying = false
     @State private var showingSaveDialog = false
     @State private var compositionTitle = ""
+    @State private var playbackTimer: Timer?
     
     @StateObject private var audioMixing = AudioMixingService()
     
@@ -100,6 +102,9 @@ struct StudioComposerView: View {
                 )
             }
         }
+        .onDisappear {
+                stopPlayback()
+            }
     }
     
     // MARK: - Empty State
@@ -171,7 +176,11 @@ struct StudioComposerView: View {
                 }
                 
                 Button {
-                    isPlaying.toggle()
+                    if isPlaying {
+                            stopPlayback()
+                        } else {
+                            startPlayback()
+                        }
                 } label: {
                     ZStack {
                         Circle()
@@ -300,6 +309,56 @@ struct StudioComposerView: View {
             viewModel.notificationMessage = "Failed to export composition: \(error.localizedDescription)"
         }
     }
+    // MARK: - Playback Methods
+    private func startPlayback() {
+        guard let comp = composition, !comp.tracks.isEmpty else { return }
+        
+        isPlaying = true
+        currentTime = 0
+        
+        // Get all recordings
+        let recordings = viewModel.songs.flatMap { $0.parts.flatMap { $0.recordings } }
+        
+        // Prepare tracks for playback
+        let tracksToPlay = comp.tracks.compactMap { track -> (id: String, fileURL: String, volume: Float, loop: Bool, startTime: Double)? in
+            guard !track.isMuted,
+                  let recording = recordings.first(where: { $0.id == track.recordingId }),
+                  let fileURL = recording.fileURL else {
+                return nil
+            }
+            
+            return (id: track.id, fileURL: fileURL, volume: track.volume, loop: recording.isLoop, startTime: track.startTime)
+        }
+        
+        if tracksToPlay.isEmpty {
+            print("⚠️ No tracks to play")
+            isPlaying = false
+            return
+        }
+        
+        print("🎵 Playing \(tracksToPlay.count) tracks")
+        audioMixing.playMultipleTracks(tracks: tracksToPlay)
+        startPlaybackTimer()
+    }
+
+    private func stopPlayback() {
+        isPlaying = false
+        audioMixing.stopAllTracks()
+        playbackTimer?.invalidate()
+        playbackTimer = nil
+        currentTime = 0
+    }
+
+    private func startPlaybackTimer() {
+        playbackTimer?.invalidate()
+        playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [self] _ in
+            currentTime += 0.1
+            if currentTime >= (composition?.duration ?? 60.0) {
+                stopPlayback()
+            }
+        }
+    }
+    
 }
 
 // MARK: - Track Row
@@ -537,7 +596,10 @@ struct ClipPickerSheet: View {
                 }
             }
         }
-        return result.sorted { $0.recording.date > $1.recording.date }
+        return result.sorted { (a: (recording: MTRecording, song: MTSong, part: MTSongPart),
+                                b: (recording: MTRecording, song: MTSong, part: MTSongPart)) -> Bool in
+                         a.recording.date > b.recording.date
+                     }
     }
     
     var body: some View {
@@ -630,3 +692,4 @@ struct ClipPickerSheet: View {
         }
     }
 }
+
