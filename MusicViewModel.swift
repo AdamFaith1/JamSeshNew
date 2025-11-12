@@ -294,7 +294,7 @@ final class MusicViewModel: ObservableObject {
         } catch { print("Failed to delete part: \(error)") }
     }
 
-    func addOrUpdateSong(context: ModelContext, title: String, artist: String, albumColor: MTAlbumColor, partName: String, partStatus: MTSongPart.PartStatus, artworkURL: String?) async {
+    func addOrUpdateSong(context: ModelContext, title: String, artist: String, albumColor: MTAlbumColor, partName: String?, partStatus: MTSongPart.PartStatus, artworkURL: String?) async {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedArtist = artist.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -302,24 +302,37 @@ final class MusicViewModel: ObservableObject {
             $0.title.localizedCaseInsensitiveCompare(trimmedTitle) == .orderedSame &&
             $0.artist.localizedCaseInsensitiveCompare(trimmedArtist) == .orderedSame
         }) {
-            let existing = songs[index]
-            do {
-                let descriptor = FetchDescriptor<SDSong>(predicate: #Predicate { $0.id == existing.id })
-                if let sdSong = try context.fetch(descriptor).first {
-                    let newPart = SDSongPart(name: partName, statusRaw: partStatus.raw)
-                    sdSong.parts.append(newPart)
-                    try context.save()
-                    songs[index].parts.append(MTSongPart(from: newPart))
-                    showNotification("Added \"\(partName)\" to \"\(existing.title)\"")
-                }
-            } catch { print("Failed to add part to existing song: \(error)") }
+            // Song exists, optionally add a part to it
+            if let partName = partName {
+                let existing = songs[index]
+                do {
+                    let descriptor = FetchDescriptor<SDSong>(predicate: #Predicate { $0.id == existing.id })
+                    if let sdSong = try context.fetch(descriptor).first {
+                        let newPart = SDSongPart(name: partName, statusRaw: partStatus.raw)
+                        sdSong.parts.append(newPart)
+                        try context.save()
+                        songs[index].parts.append(MTSongPart(from: newPart))
+                        showNotification("Added \"\(partName)\" to \"\(existing.title)\"")
+                    }
+                } catch { print("Failed to add part to existing song: \(error)") }
+            }
         } else {
+            // Create new song, optionally with a part
             do {
-                let sdSong = SDSong(title: trimmedTitle, artist: trimmedArtist, artworkURLString: artworkURL, albumColorRaw: albumColor.raw, parts: [SDSongPart(name: partName, statusRaw: partStatus.raw)])
-                context.insert(sdSong)
-                try context.save()
-                songs.append(MTSong(from: sdSong))
-                showNotification("Created \"\(sdSong.title)\" with part \"\(partName)\"")
+                let sdSong: SDSong
+                if let partName = partName {
+                    sdSong = SDSong(title: trimmedTitle, artist: trimmedArtist, artworkURLString: artworkURL, albumColorRaw: albumColor.raw, parts: [SDSongPart(name: partName, statusRaw: partStatus.raw)])
+                    context.insert(sdSong)
+                    try context.save()
+                    songs.append(MTSong(from: sdSong))
+                    showNotification("Created \"\(sdSong.title)\" with part \"\(partName)\"")
+                } else {
+                    sdSong = SDSong(title: trimmedTitle, artist: trimmedArtist, artworkURLString: artworkURL, albumColorRaw: albumColor.raw, parts: [])
+                    context.insert(sdSong)
+                    try context.save()
+                    songs.append(MTSong(from: sdSong))
+                    showNotification("Created \"\(sdSong.title)\"")
+                }
             } catch { print("Failed to add song: \(error)") }
         }
     }

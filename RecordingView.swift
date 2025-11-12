@@ -305,24 +305,25 @@ struct RecordingView: View {
                             showingSongPicker = false
                             return
                         }
-                        
+
+                        // Create song without any parts initially
                         await viewModel.addOrUpdateSong(
                             context: modelContext,
                             title: suggestion.title,
                             artist: suggestion.artist,
                             albumColor: .purple,
-                            partName: "Intro",
+                            partName: nil,
                             partStatus: .learning,
                             artworkURL: suggestion.artworkURL?.absoluteString
                         )
-                        
+
                         if let newSong = viewModel.songs.first(where: {
                             $0.title == suggestion.title && $0.artist == suggestion.artist
                         }) {
                             selectedSong = newSong
-                            selectedPart = newSong.parts.first
+                            selectedPart = nil
                         }
-                        
+
                         showingSongPicker = false
                     }
                 }
