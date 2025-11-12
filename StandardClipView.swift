@@ -16,32 +16,32 @@ struct StandardClipView: View {
     let isPlaying: Bool
     let size: ClipSize
     let onPlay: () -> Void
-    
+
     enum ClipSize {
         case compact  // For lists
         case standard // For song view
         case large    // For featured/studio
-        
+
         var height: CGFloat {
             switch self {
-            case .compact: return 60
-            case .standard: return 80
-            case .large: return 100
+            case .compact: return 90
+            case .standard: return 110
+            case .large: return 130
             }
         }
-        
+
         var cornerRadius: CGFloat {
             switch self {
-            case .compact: return 12
-            case .standard: return 14
-            case .large: return 16
+            case .compact: return 16
+            case .standard: return 18
+            case .large: return 20
             }
         }
     }
-    
+
     @State private var waveformLevels: [CGFloat] = []
     @State private var animateWaveform = false
-    
+
     private var partTypeColor: Color {
         let lowercased = part.name.lowercased()
         if lowercased.contains("intro") || lowercased.contains("outro") { return .purple }
@@ -54,12 +54,12 @@ struct StandardClipView: View {
         if lowercased.contains("drum") { return .yellow }
         return .purple
     }
-    
+
     private var duration: String {
         guard let fileURL = recording.fileURL else { return "--:--" }
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let url = docs.appendingPathComponent(fileURL)
-        
+
         if let player = try? AVAudioPlayer(contentsOf: url) {
             let minutes = Int(player.duration) / 60
             let seconds = Int(player.duration) % 60
@@ -67,175 +67,292 @@ struct StandardClipView: View {
         }
         return "--:--"
     }
-    
+
+    // Album artwork helpers
+    private var artworkImage: UIImage? {
+        guard let artworkString = song.artworkURL, !artworkString.isEmpty else { return nil }
+        if !artworkString.hasPrefix("http"), let data = Data(base64Encoded: artworkString) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+
+    private var artworkURL: URL? {
+        guard let artworkString = song.artworkURL, artworkString.hasPrefix("http") else { return nil }
+        return URL(string: artworkString)
+    }
+
+    private var albumGradient: LinearGradient {
+        let baseColor: Color
+        switch song.albumColor {
+        case .purple: baseColor = .purple
+        case .blue: baseColor = .blue
+        case .green: baseColor = .green
+        case .orange: baseColor = .orange
+        case .fuchsia: baseColor = Color(red: 0.9, green: 0.1, blue: 0.6)
+        }
+
+        return LinearGradient(
+            colors: [baseColor.opacity(0.8), baseColor.opacity(0.5)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     var body: some View {
         Button(action: onPlay) {
-            ZStack {
-                // Main clip body with gradient
-                RoundedRectangle(cornerRadius: size.cornerRadius)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.08, green: 0.08, blue: 0.12),
-                                Color(red: 0.05, green: 0.05, blue: 0.08)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .overlay(
-                        // Subtle inner shadow for depth
-                        RoundedRectangle(cornerRadius: size.cornerRadius)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.1),
-                                        Color.clear
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .center
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-                
-                HStack(spacing: 0) {
-                    // Left side - Part type color bar
+            HStack(spacing: 0) {
+                // Left accent stripe with glow effect
+                ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: size.cornerRadius)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    partTypeColor,
-                                    partTypeColor.opacity(0.7)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 6)
-                        .padding(4)
-                    
-                    // Play button circle
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: isPlaying ?
-                                        [partTypeColor, partTypeColor.opacity(0.6)] :
-                                        [Color.white.opacity(0.1), Color.white.opacity(0.05)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: size == .compact ? 36 : 44, height: size == .compact ? 36 : 44)
-                        
-                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: size == .compact ? 14 : 18, weight: .bold))
-                            .foregroundStyle(.white)
-                            .offset(x: isPlaying ? 0 : 1)
+                        .fill(partTypeColor)
+                        .frame(width: 5)
+
+                    if isPlaying {
+                        RoundedRectangle(cornerRadius: size.cornerRadius)
+                            .fill(partTypeColor)
+                            .frame(width: 5)
+                            .blur(radius: 8)
+                            .opacity(0.8)
                     }
-                    .padding(.leading, 8)
-                    
-                    // Waveform visualization
-                    HStack(spacing: 2) {
-                        ForEach(0..<12, id: \.self) { index in
-                            Capsule()
-                                .fill(
-                                    isPlaying ?
-                                        LinearGradient(
-                                            colors: [partTypeColor, partTypeColor.opacity(0.5)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        ) :
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                )
-                                .frame(width: 3, height: waveformHeight(for: index))
-                                .animation(
-                                    isPlaying ?
-                                        .easeInOut(duration: 0.3)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(index) * 0.05) :
-                                        .default,
-                                    value: isPlaying
-                                )
+                }
+
+                // Main content area
+                HStack(spacing: 12) {
+                    // Album artwork thumbnail
+                    ZStack {
+                        albumGradient
+
+                        if let image = artworkImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        } else if let url = artworkURL {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().scaledToFill()
+                                default:
+                                    EmptyView()
+                                }
+                            }
+                        } else {
+                            Image(systemName: "music.note")
+                                .foregroundStyle(.white.opacity(0.5))
+                                .font(.system(size: size == .compact ? 20 : 24))
                         }
                     }
-                    .frame(width: 60)
-                    .padding(.horizontal, 12)
-                    
-                    // Clip info
-                    VStack(alignment: .leading, spacing: size == .compact ? 2 : 4) {
-                        Text(part.name)
-                            .font(size == .compact ? .caption : .subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        
-                        HStack(spacing: 4) {
-                            Text(duration)
+                    .frame(
+                        width: size == .compact ? 60 : 70,
+                        height: size == .compact ? 60 : 70
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(partTypeColor.opacity(0.3), lineWidth: 1.5)
+                    )
+                    .shadow(color: partTypeColor.opacity(0.3), radius: 6, y: 2)
+
+                    // Info section
+                    VStack(alignment: .leading, spacing: 6) {
+                        // Part name with badge
+                        HStack(spacing: 8) {
+                            Text(part.name)
+                                .font(size == .compact ? .subheadline : .headline)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+
+                            // Part type badge
+                            Text(part.status == .complete ? "✓" : "⏱")
                                 .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.5))
-                            
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(part.status == .complete ? Color.green.opacity(0.3) : Color.orange.opacity(0.3))
+                                )
+                        }
+
+                        // Song title and artist
+                        if size != .compact {
+                            HStack(spacing: 4) {
+                                Text(song.title)
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white.opacity(0.7))
+                                    .lineLimit(1)
+
+                                Text("•")
+                                    .font(.caption2)
+                                    .foregroundStyle(.white.opacity(0.3))
+
+                                Text(song.artist)
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.6))
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        // Metadata row
+                        HStack(spacing: 6) {
+                            // Duration
+                            HStack(spacing: 3) {
+                                Image(systemName: "clock.fill")
+                                    .font(.caption2)
+                                Text(duration)
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundStyle(partTypeColor.opacity(0.9))
+
+                            // Loop indicator
                             if recording.isLoop {
                                 Text("•")
                                     .foregroundStyle(.white.opacity(0.3))
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(.caption2)
-                                    .foregroundStyle(.green)
+                                HStack(spacing: 3) {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.caption2)
+                                    Text("Loop")
+                                        .font(.caption2)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundStyle(.green)
                             }
-                            
+
+                            // Note indicator
                             if !recording.note.isEmpty {
                                 Text("•")
                                     .foregroundStyle(.white.opacity(0.3))
                                 Image(systemName: "note.text")
                                     .font(.caption2)
-                                    .foregroundStyle(.blue.opacity(0.7))
+                                    .foregroundStyle(.blue.opacity(0.8))
                             }
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Recording date
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(formatDate(recording.date))
-                            .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.4))
-                        
-                        if size != .compact {
-                            Text(formatTime(recording.date))
+
+                            Spacer()
+
+                            // Date
+                            Text(formatDate(recording.date))
                                 .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.3))
+                                .foregroundStyle(.white.opacity(0.5))
                         }
                     }
-                    .padding(.trailing, 12)
-                }
-            }
-            .frame(height: size.height)
-            .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
-            .overlay(
-                // Playing indicator overlay
-                Group {
-                    if isPlaying {
-                        RoundedRectangle(cornerRadius: size.cornerRadius)
-                            .stroke(
+
+                    Spacer()
+
+                    // Play button
+                    ZStack {
+                        // Glow effect when playing
+                        if isPlaying {
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [partTypeColor.opacity(0.4), partTypeColor.opacity(0)],
+                                        center: .center,
+                                        startRadius: 0,
+                                        endRadius: 35
+                                    )
+                                )
+                                .frame(width: 70, height: 70)
+                        }
+
+                        Circle()
+                            .fill(
                                 LinearGradient(
-                                    colors: [
-                                        partTypeColor.opacity(0.6),
-                                        partTypeColor.opacity(0.3)
-                                    ],
+                                    colors: isPlaying ?
+                                        [partTypeColor, partTypeColor.opacity(0.7)] :
+                                        [Color.white.opacity(0.15), Color.white.opacity(0.08)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
+                                )
                             )
-                            .shadow(color: partTypeColor.opacity(0.5), radius: 4)
+                            .frame(
+                                width: size == .compact ? 44 : 52,
+                                height: size == .compact ? 44 : 52
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(isPlaying ? 0.4 : 0.2),
+                                                Color.clear
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
+                            .shadow(
+                                color: isPlaying ? partTypeColor.opacity(0.5) : .black.opacity(0.3),
+                                radius: isPlaying ? 8 : 4,
+                                y: 2
+                            )
+
+                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: size == .compact ? 16 : 20, weight: .bold))
+                            .foregroundStyle(.white)
+                            .offset(x: isPlaying ? 0 : 2)
+                    }
+                    .scaleEffect(isPlaying ? 1.05 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPlaying)
+                    .padding(.trailing, 4)
+                }
+                .padding(.vertical, 12)
+                .padding(.leading, 12)
+                .padding(.trailing, 8)
+            }
+            .frame(height: size.height)
+            .background(
+                ZStack {
+                    // Base gradient background
+                    RoundedRectangle(cornerRadius: size.cornerRadius)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.1, green: 0.1, blue: 0.15).opacity(0.95),
+                                    Color(red: 0.06, green: 0.06, blue: 0.1).opacity(0.95)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    // Subtle color tint when playing
+                    if isPlaying {
+                        RoundedRectangle(cornerRadius: size.cornerRadius)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        partTypeColor.opacity(0.08),
+                                        partTypeColor.opacity(0.03)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                     }
                 }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: size.cornerRadius)
+                    .stroke(
+                        LinearGradient(
+                            colors: isPlaying ?
+                                [partTypeColor.opacity(0.6), partTypeColor.opacity(0.3)] :
+                                [Color.white.opacity(0.1), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isPlaying ? 2 : 1
+                    )
+            )
+            .shadow(
+                color: isPlaying ? partTypeColor.opacity(0.3) : .black.opacity(0.4),
+                radius: isPlaying ? 12 : 8,
+                y: 4
             )
         }
         .buttonStyle(ClipButtonStyle())
