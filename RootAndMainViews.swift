@@ -99,7 +99,7 @@ struct TabContent: View {
         ZStack {
             switch viewModel.activeTab {
             case .home:
-                HomePlaceholderView()
+                HomeView(viewModel: viewModel)
                 
             case .collection:
                 if viewModel.songs.isEmpty {

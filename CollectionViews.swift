@@ -422,20 +422,34 @@ struct ClipsListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 10) {
                         ForEach(viewModel.allClips) { clip in
-                            ClipCard(
-                                clip: clip,
+                            StandardClipView(
+                                recording: clip.recording,
+                                song: clip.song,
+                                part: clip.part,
                                 isPlaying: audioPlaybackManager.currentlyPlayingId == clip.recording.id && audioPlaybackManager.isPlaying,
-                                onTap: {
-                                    selectedClip = clip
-                                },
+                                size: .standard,
                                 onPlay: {
                                     guard let fileURL = clip.recording.fileURL else { return }
                                     audioPlaybackManager.playRecording(id: clip.recording.id, fileURL: fileURL)
-                                },
-                                audioPlaybackManager: audioPlaybackManager
+                                }
                             )
+                            .contextMenu {
+                                Button {
+                                    selectedClip = clip
+                                } label: {
+                                    Label("View Details", systemImage: "info.circle")
+                                }
+                                
+                                Button {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        viewModel.selectedSongId = clip.song.id
+                                    }
+                                } label: {
+                                    Label("View Song", systemImage: "music.note.list")
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, 16)

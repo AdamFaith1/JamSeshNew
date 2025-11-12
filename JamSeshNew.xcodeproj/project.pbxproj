@@ -31,6 +31,8 @@
 		7C9A753A2EBFE9DA00F6F261 /* AudioMixingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A75392EBFE9D600F6F261 /* AudioMixingService.swift */; };
 		7C9A753C2EBFE9E800F6F261 /* LoopEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A753B2EBFE9E500F6F261 /* LoopEditor.swift */; };
 		7C9A753E2EBFEA0400F6F261 /* StudioComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A753D2EBFEA0100F6F261 /* StudioComposer.swift */; };
+		7C9A75402EC0EDD900F6F261 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A753F2EC0EDCF00F6F261 /* HomeView.swift */; };
+		7C9A75422EC24CFC00F6F261 /* StandardClipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9A75412EC24CF900F6F261 /* StandardClipView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +62,8 @@
 		7C9A75392EBFE9D600F6F261 /* AudioMixingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMixingService.swift; sourceTree = "<group>"; };
 		7C9A753B2EBFE9E500F6F261 /* LoopEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopEditor.swift; sourceTree = "<group>"; };
 		7C9A753D2EBFEA0100F6F261 /* StudioComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioComposer.swift; sourceTree = "<group>"; };
+		7C9A753F2EC0EDCF00F6F261 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		7C9A75412EC24CF900F6F261 /* StandardClipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardClipView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -102,6 +106,8 @@
 				7C9A75392EBFE9D600F6F261 /* AudioMixingService.swift */,
 				7C9A753B2EBFE9E500F6F261 /* LoopEditor.swift */,
 				7C9A753D2EBFEA0100F6F261 /* StudioComposer.swift */,
+				7C9A753F2EC0EDCF00F6F261 /* HomeView.swift */,
+				7C9A75412EC24CF900F6F261 /* StandardClipView.swift */,
 				7C284E4F2EBEE54700E01278 /* MusicViewModel.swift */,
 				7C284E502EBEE54700E01278 /* RecordingComponents.swift */,
 				7C284E512EBEE54700E01278 /* RecordingPickerSheets.swift */,
@@ -218,7 +224,9 @@
 				7C284E692EBEE54800E01278 /* SongSearchService.swift in Sources */,
 				7C284E6A2EBEE54800E01278 /* GlobalOverlays.swift in Sources */,
 				7C284E6B2EBEE54800E01278 /* MediaPickerButton.swift in Sources */,
+				7C9A75422EC24CFC00F6F261 /* StandardClipView.swift in Sources */,
 				7C284E6C2EBEE54800E01278 /* RecordingView.swift in Sources */,
+				7C9A75402EC0EDD900F6F261 /* HomeView.swift in Sources */,
 				7C9A753E2EBFEA0400F6F261 /* StudioComposer.swift in Sources */,
 				7C9A753A2EBFE9DA00F6F261 /* AudioMixingService.swift in Sources */,
 			);
