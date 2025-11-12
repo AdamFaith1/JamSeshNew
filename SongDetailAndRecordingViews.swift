@@ -287,7 +287,8 @@ struct ModernSongDetailView: View {
     @State private var showingRecordSheet = false
     @State private var showingAddPart = false
     @State private var expandedParts: Set<String> = []
-    
+    @State private var selectedPartForRecording: MTSongPart?
+
     private var song: MTSong? { viewModel.songs.first { $0.id == songId } }
     
     private var groupedClips: [(part: MTSongPart, clips: [MTRecording])] {
@@ -346,6 +347,19 @@ struct ModernSongDetailView: View {
                                                 recordingId: clip.id
                                             )
                                         }
+                                    },
+                                    onRecordNew: {
+                                        selectedPartForRecording = group.part
+                                        showingRecordSheet = true
+                                    },
+                                    onDeletePart: {
+                                        Task {
+                                            await viewModel.deletePart(
+                                                context: modelContext,
+                                                songId: song.id,
+                                                partId: group.part.id
+                                            )
+                                        }
                                     }
                                 )
                             }
@@ -367,6 +381,7 @@ struct ModernSongDetailView: View {
                     HStack {
                         Spacer()
                         FloatingRecordButton {
+                            selectedPartForRecording = nil
                             showingRecordSheet = true
                         }
                         .padding(24)
@@ -375,7 +390,7 @@ struct ModernSongDetailView: View {
             }
         }
         .fullScreenCover(isPresented: $showingRecordSheet) {
-            RecordingView(viewModel: viewModel)
+            RecordingView(viewModel: viewModel, preselectedSong: song, preselectedPart: selectedPartForRecording)
         }
         .sheet(isPresented: $showingAddPart) {
             if let song = song {
@@ -450,16 +465,26 @@ struct CleanPartCard: View {
                 }
                 
                 Spacer()
-                
+
                 Menu {
+                    Button {
+                        onRecord()
+                    } label: {
+                        Label("Record New", systemImage: "waveform.circle")
+                    }
+
+                    Divider()
+
                     Button("Delete Part", role: .destructive) {
                         showingDeletePartAlert = true
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "ellipsis.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(.white.opacity(0.5))
-                        .frame(width: 32, height: 32)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(8)
+                        .background(Color.white.opacity(0.05))
+                        .clipShape(Circle())
                 }
             }
             .padding(20)

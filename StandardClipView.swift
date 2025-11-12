@@ -41,18 +41,21 @@ struct StandardClipView: View {
 
     @State private var waveformLevels: [CGFloat] = []
     @State private var animateWaveform = false
+    @State private var glowPhase: CGFloat = 0
 
-    private var partTypeColor: Color {
-        let lowercased = part.name.lowercased()
-        if lowercased.contains("intro") || lowercased.contains("outro") { return .purple }
-        if lowercased.contains("verse") { return .blue }
-        if lowercased.contains("chorus") { return .pink }
-        if lowercased.contains("bridge") { return .orange }
-        if lowercased.contains("solo") || lowercased.contains("lead") { return .red }
-        if lowercased.contains("rhythm") { return .green }
-        if lowercased.contains("bass") { return .indigo }
-        if lowercased.contains("drum") { return .yellow }
+    // Neutral accent color
+    private var accentColor: Color {
         return .purple
+    }
+
+    // Animated glow colors when playing
+    private func glowColor(for phase: CGFloat) -> Color {
+        let colors: [Color] = [.purple, .pink, .blue, .cyan, .purple]
+        let index = Int(phase * 4) % 4
+        let nextIndex = (index + 1) % 5
+        let progress = (phase * 4).truncatingRemainder(dividingBy: 1)
+
+        return colors[index].interpolate(with: colors[nextIndex], amount: progress)
     }
 
     private var duration: String {
@@ -102,18 +105,23 @@ struct StandardClipView: View {
     var body: some View {
         Button(action: onPlay) {
             HStack(spacing: 0) {
-                // Left accent stripe with glow effect
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: size.cornerRadius)
-                        .fill(partTypeColor)
-                        .frame(width: 5)
+                // Left accent stripe with animated glow effect
+                TimelineView(.animation) { timeline in
+                    let phase = isPlaying ? timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3) / 3 : 0
+                    let currentGlowColor = isPlaying ? glowColor(for: phase) : accentColor
 
-                    if isPlaying {
+                    ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: size.cornerRadius)
-                            .fill(partTypeColor)
+                            .fill(currentGlowColor)
                             .frame(width: 5)
-                            .blur(radius: 8)
-                            .opacity(0.8)
+
+                        if isPlaying {
+                            RoundedRectangle(cornerRadius: size.cornerRadius)
+                                .fill(currentGlowColor)
+                                .frame(width: 5)
+                                .blur(radius: 12)
+                                .opacity(0.9)
+                        }
                     }
                 }
 
@@ -149,9 +157,9 @@ struct StandardClipView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(partTypeColor.opacity(0.3), lineWidth: 1.5)
+                            .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
                     )
-                    .shadow(color: partTypeColor.opacity(0.3), radius: 6, y: 2)
+                    .shadow(color: accentColor.opacity(0.2), radius: 6, y: 2)
 
                     // Info section
                     VStack(alignment: .leading, spacing: 6) {
@@ -205,7 +213,7 @@ struct StandardClipView: View {
                                     .font(.caption2)
                                     .fontWeight(.medium)
                             }
-                            .foregroundStyle(partTypeColor.opacity(0.9))
+                            .foregroundStyle(accentColor.opacity(0.9))
 
                             // Loop indicator
                             if recording.isLoop {
@@ -241,64 +249,69 @@ struct StandardClipView: View {
 
                     Spacer()
 
-                    // Play button
-                    ZStack {
-                        // Glow effect when playing
-                        if isPlaying {
+                    // Play button with animated glow
+                    TimelineView(.animation) { timeline in
+                        let phase = isPlaying ? timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3) / 3 : 0
+                        let currentGlowColor = isPlaying ? glowColor(for: phase) : accentColor
+
+                        ZStack {
+                            // Animated glow effect when playing
+                            if isPlaying {
+                                Circle()
+                                    .fill(
+                                        RadialGradient(
+                                            colors: [currentGlowColor.opacity(0.5), currentGlowColor.opacity(0)],
+                                            center: .center,
+                                            startRadius: 0,
+                                            endRadius: 40
+                                        )
+                                    )
+                                    .frame(width: 80, height: 80)
+                            }
+
                             Circle()
                                 .fill(
-                                    RadialGradient(
-                                        colors: [partTypeColor.opacity(0.4), partTypeColor.opacity(0)],
-                                        center: .center,
-                                        startRadius: 0,
-                                        endRadius: 35
+                                    LinearGradient(
+                                        colors: isPlaying ?
+                                            [currentGlowColor, currentGlowColor.opacity(0.7)] :
+                                            [Color.white.opacity(0.15), Color.white.opacity(0.08)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
                                     )
                                 )
-                                .frame(width: 70, height: 70)
+                                .frame(
+                                    width: size == .compact ? 44 : 52,
+                                    height: size == .compact ? 44 : 52
+                                )
+                                .overlay(
+                                    Circle()
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [
+                                                    Color.white.opacity(isPlaying ? 0.5 : 0.2),
+                                                    Color.clear
+                                                ],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                                .shadow(
+                                    color: isPlaying ? currentGlowColor.opacity(0.6) : .black.opacity(0.3),
+                                    radius: isPlaying ? 12 : 4,
+                                    y: 2
+                                )
+
+                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: size == .compact ? 16 : 20, weight: .bold))
+                                .foregroundStyle(.white)
+                                .offset(x: isPlaying ? 0 : 2)
                         }
-
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: isPlaying ?
-                                        [partTypeColor, partTypeColor.opacity(0.7)] :
-                                        [Color.white.opacity(0.15), Color.white.opacity(0.08)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(
-                                width: size == .compact ? 44 : 52,
-                                height: size == .compact ? 44 : 52
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            colors: [
-                                                Color.white.opacity(isPlaying ? 0.4 : 0.2),
-                                                Color.clear
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        ),
-                                        lineWidth: 1
-                                    )
-                            )
-                            .shadow(
-                                color: isPlaying ? partTypeColor.opacity(0.5) : .black.opacity(0.3),
-                                radius: isPlaying ? 8 : 4,
-                                y: 2
-                            )
-
-                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: size == .compact ? 16 : 20, weight: .bold))
-                            .foregroundStyle(.white)
-                            .offset(x: isPlaying ? 0 : 2)
+                        .scaleEffect(isPlaying ? 1.05 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPlaying)
+                        .padding(.trailing, 4)
                     }
-                    .scaleEffect(isPlaying ? 1.05 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPlaying)
-                    .padding(.trailing, 4)
                 }
                 .padding(.vertical, 12)
                 .padding(.leading, 12)
@@ -306,52 +319,62 @@ struct StandardClipView: View {
             }
             .frame(height: size.height)
             .background(
-                ZStack {
-                    // Base gradient background
-                    RoundedRectangle(cornerRadius: size.cornerRadius)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.1, green: 0.1, blue: 0.15).opacity(0.95),
-                                    Color(red: 0.06, green: 0.06, blue: 0.1).opacity(0.95)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                TimelineView(.animation) { timeline in
+                    let phase = isPlaying ? timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3) / 3 : 0
+                    let currentGlowColor = isPlaying ? glowColor(for: phase) : accentColor
 
-                    // Subtle color tint when playing
-                    if isPlaying {
+                    ZStack {
+                        // Base gradient background
                         RoundedRectangle(cornerRadius: size.cornerRadius)
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        partTypeColor.opacity(0.08),
-                                        partTypeColor.opacity(0.03)
+                                        Color(red: 0.1, green: 0.1, blue: 0.15).opacity(0.95),
+                                        Color(red: 0.06, green: 0.06, blue: 0.1).opacity(0.95)
                                     ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
                             )
+
+                        // Animated color tint when playing
+                        if isPlaying {
+                            RoundedRectangle(cornerRadius: size.cornerRadius)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            currentGlowColor.opacity(0.12),
+                                            currentGlowColor.opacity(0.04)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        }
                     }
                 }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: size.cornerRadius)
-                    .stroke(
-                        LinearGradient(
-                            colors: isPlaying ?
-                                [partTypeColor.opacity(0.6), partTypeColor.opacity(0.3)] :
-                                [Color.white.opacity(0.1), Color.white.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: isPlaying ? 2 : 1
-                    )
+                TimelineView(.animation) { timeline in
+                    let phase = isPlaying ? timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3) / 3 : 0
+                    let currentGlowColor = isPlaying ? glowColor(for: phase) : accentColor
+
+                    RoundedRectangle(cornerRadius: size.cornerRadius)
+                        .stroke(
+                            LinearGradient(
+                                colors: isPlaying ?
+                                    [currentGlowColor.opacity(0.7), currentGlowColor.opacity(0.4)] :
+                                    [Color.white.opacity(0.1), Color.white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isPlaying ? 2 : 1
+                        )
+                }
             )
             .shadow(
-                color: isPlaying ? partTypeColor.opacity(0.3) : .black.opacity(0.4),
-                radius: isPlaying ? 12 : 8,
+                color: .black.opacity(0.4),
+                radius: 8,
                 y: 4
             )
         }
@@ -474,7 +497,9 @@ struct PartClipsSection: View {
     @ObservedObject var audioPlaybackManager: AudioPlaybackManager
     let onToggleExpand: () -> Void
     let onDelete: (MTRecording) -> Void
-    
+    let onRecordNew: (() -> Void)?
+    let onDeletePart: (() -> Void)?
+
     private var mostRecentClip: MTRecording? { clips.first }
     private var olderClips: [MTRecording] { Array(clips.dropFirst()) }
     
@@ -485,26 +510,49 @@ struct PartClipsSection: View {
                 Circle()
                     .fill(part.status == .complete ? Color.green : Color.orange)
                     .frame(width: 8, height: 8)
-                
+
                 Text(part.name)
                     .font(.headline)
                     .foregroundStyle(.white)
-                
+
                 Spacer()
-                
+
                 if clips.count > 1 {
                     Button(action: onToggleExpand) {
                         HStack(spacing: 4) {
                             Text("\(clips.count - 1) more")
                                 .font(.caption)
                                 .foregroundStyle(.purple.opacity(0.8))
-                            
+
                             Image(systemName: "chevron.down")
                                 .font(.caption)
                                 .rotationEffect(.degrees(isExpanded ? 180 : 0))
                                 .foregroundStyle(.purple.opacity(0.8))
                         }
                     }
+                }
+
+                // Edit menu button
+                Menu {
+                    if let onRecordNew = onRecordNew {
+                        Button(action: onRecordNew) {
+                            Label("Record New", systemImage: "waveform.circle")
+                        }
+                    }
+
+                    if let onDeletePart = onDeletePart {
+                        Divider()
+                        Button(role: .destructive, action: onDeletePart) {
+                            Label("Delete Part", systemImage: "trash")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(8)
+                        .background(Color.white.opacity(0.05))
+                        .clipShape(Circle())
                 }
             }
             .padding(.horizontal, 4)
@@ -705,5 +753,23 @@ struct AlbumArtView: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: size * 0.2))
+    }
+}
+
+// MARK: - Color Extension for Interpolation
+extension Color {
+    func interpolate(with color: Color, amount: CGFloat) -> Color {
+        let amount = max(0, min(1, amount))
+
+        guard let c1 = UIColor(self).cgColor.components,
+              let c2 = UIColor(color).cgColor.components else {
+            return self
+        }
+
+        let r = c1[0] + (c2[0] - c1[0]) * amount
+        let g = c1[1] + (c2[1] - c1[1]) * amount
+        let b = c1[2] + (c2[2] - c1[2]) * amount
+
+        return Color(red: r, green: g, blue: b)
     }
 }

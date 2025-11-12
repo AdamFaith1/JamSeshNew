@@ -18,13 +18,17 @@ struct RecordingView: View {
     @StateObject private var audioMixing = AudioMixingService()
     @State private var backingTrackRecording: MTRecording?
     @State private var showingBackingTrackPicker = false
-    
+
+    // Preselected song and part (optional)
+    let preselectedSong: MTSong?
+    let preselectedPart: MTSongPart?
+
     // Recording state
     @State private var recordingPhase: RecordingPhase = .ready
     @State private var hasRecording = false
     @State private var countdownValue: Int = 0
     @State private var isCountingDown = false
-    
+
     // Song/Part selection
     @State private var selectedSong: MTSong?
     @State private var selectedPart: MTSongPart?
@@ -33,6 +37,15 @@ struct RecordingView: View {
     @State private var showingPartPicker = false
     @State private var showingNotes = false
     @State private var showingTools = false
+
+    // Initialize with optional preselected song and part
+    init(viewModel: MusicViewModel, preselectedSong: MTSong? = nil, preselectedPart: MTSongPart? = nil) {
+        self.viewModel = viewModel
+        self.preselectedSong = preselectedSong
+        self.preselectedPart = preselectedPart
+        self._selectedSong = State(initialValue: preselectedSong)
+        self._selectedPart = State(initialValue: preselectedPart)
+    }
     
     // Notes
     @State private var recordingNote = ""
