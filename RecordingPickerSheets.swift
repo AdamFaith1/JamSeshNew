@@ -501,9 +501,9 @@ struct PartPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingAddPart = false
     @State private var newPartName = ""
-    
-    let standardParts = ["Intro", "Verse", "Chorus", "Bridge", "Solo", "Outro",
-                         "Vocals", "Lead Guitar", "Rhythm Guitar", "Bass", "Drums", "Keys"]
+
+    let standardParts = ["Chords", "Intro", "Riff", "Bridge", "Solo", "Outro",
+                         "Verse", "Chorus", "Vocals", "Lead Guitar", "Rhythm Guitar", "Bass", "Drums", "Keys"]
     
     var body: some View {
         NavigationStack {

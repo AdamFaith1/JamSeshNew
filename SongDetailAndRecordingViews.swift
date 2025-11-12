@@ -760,6 +760,7 @@ struct AddPartView: View {
 
     @State private var newPartName = "Intro"
     @State private var newPartStatus: MTSongPart.PartStatus = .learning
+    @State private var isSaving = false
 
     var body: some View {
         ZStack {
@@ -774,11 +775,18 @@ struct AddPartView: View {
                     Button { isPresented = false } label: {
                         HStack(spacing: 8) { Image(systemName: "xmark"); Text("Cancel") }.foregroundStyle(.purple)
                     }
+                    .disabled(isSaving)
                     Spacer()
                     Text("Add Part").font(.headline).foregroundStyle(.white)
                     Spacer()
-                    Button("Add") { onSave(newPartName, newPartStatus) }
-                        .foregroundStyle(.green).fontWeight(.semibold)
+                    Button("Add") {
+                        guard !isSaving else { return }
+                        isSaving = true
+                        onSave(newPartName, newPartStatus)
+                        isPresented = false
+                    }
+                    .disabled(isSaving)
+                    .foregroundStyle(isSaving ? .gray : .green).fontWeight(.semibold)
                 }
                 .padding()
                 .background(Color.purple.opacity(0.05))
