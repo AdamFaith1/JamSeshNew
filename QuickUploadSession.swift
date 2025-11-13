@@ -9,6 +9,7 @@
 import SwiftUI
 import SwiftData
 import AVFoundation
+internal import Combine
 
 // MARK: - Quick Upload Models
 
@@ -47,6 +48,7 @@ struct QUSession: Codable {
 
 @MainActor
 class QuickUploadSessionManager: ObservableObject {
+    
     @Published var session: QUSession
     @Published var isRecording = false
     @Published var recordingTime: TimeInterval = 0
