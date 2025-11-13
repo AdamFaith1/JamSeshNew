@@ -48,7 +48,7 @@ struct QUSession: Codable {
 
 @MainActor
 class QuickUploadSessionManager: ObservableObject {
-    
+
     @Published var session: QUSession
     @Published var isRecording = false
     @Published var recordingTime: TimeInterval = 0
@@ -56,6 +56,9 @@ class QuickUploadSessionManager: ObservableObject {
     @Published var isCountingDown = false
     @Published var countdownValue: Int = 3
     @Published var countdownEnabled: Bool = true
+    @Published var isReviewingRecording = false
+    @Published var tempRecordingURL: String?
+    @Published var tempRecordingDuration: TimeInterval = 0
 
     private let sessionKey = "quick_upload_session"
     private let countdownEnabledKey = "qu_countdown_enabled"
@@ -151,15 +154,43 @@ class QuickUploadSessionManager: ObservableObject {
             self?.recordingTime += 0.1
         }
     }
-    
+
     func stopRecording(fileURL: String, duration: TimeInterval) {
         isRecording = false
         recordingTimer?.invalidate()
         recordingTimer = nil
-        
-        let clip = QUClip(fileURL: fileURL, duration: duration)
+
+        // Enter review mode instead of immediately saving
+        tempRecordingURL = fileURL
+        tempRecordingDuration = duration
+        isReviewingRecording = true
+    }
+
+    func keepRecording() {
+        guard let fileURL = tempRecordingURL else { return }
+
+        let clip = QUClip(fileURL: fileURL, duration: tempRecordingDuration)
         session.clips.insert(clip, at: 0) // Add to beginning
         saveSession()
+
+        // Clear temp state
+        tempRecordingURL = nil
+        tempRecordingDuration = 0
+        isReviewingRecording = false
+    }
+
+    func discardRecording() {
+        // Delete the temp recording file
+        if let fileURL = tempRecordingURL {
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let url = docs.appendingPathComponent(fileURL)
+            try? FileManager.default.removeItem(at: url)
+        }
+
+        // Clear temp state
+        tempRecordingURL = nil
+        tempRecordingDuration = 0
+        isReviewingRecording = false
     }
     
     func updateClipIdentification(clipId: String, songId: String?, songTitle: String?, songArtist: String?, partName: String?) {
@@ -312,8 +343,21 @@ struct QuickUploadView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+            // Review overlay
+            if sessionManager.isReviewingRecording,
+               let fileURL = sessionManager.tempRecordingURL {
+                QUReviewOverlay(
+                    fileURL: fileURL,
+                    duration: sessionManager.tempRecordingDuration,
+                    onKeep: handleKeepRecording,
+                    onReRecord: handleReRecord,
+                    onDiscard: handleDiscardRecording
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             // Floating record button
-            if !sessionManager.isRecording && !sessionManager.isCountingDown && !sessionManager.session.clips.isEmpty {
+            if !sessionManager.isRecording && !sessionManager.isCountingDown && !sessionManager.isReviewingRecording && !sessionManager.session.clips.isEmpty {
                 VStack {
                     Spacer()
                     QUFloatingRecordButton(onTap: handleStartRecording)
@@ -355,6 +399,7 @@ struct QuickUploadView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: sessionManager.isRecording)
         .animation(.easeInOut(duration: 0.3), value: sessionManager.isCountingDown)
+        .animation(.easeInOut(duration: 0.3), value: sessionManager.isReviewingRecording)
     }
 
     // MARK: - Actions
@@ -365,10 +410,10 @@ struct QuickUploadView: View {
             audioRecorder.startRecording()
         }
     }
-    
+
     private func handleStopRecording() {
         guard let recordingURL = audioRecorder.stopRecording() else { return }
-        
+
         // Get duration
         let duration: TimeInterval
         if let player = try? AVAudioPlayer(contentsOf: recordingURL) {
@@ -376,15 +421,36 @@ struct QuickUploadView: View {
         } else {
             duration = sessionManager.recordingTime
         }
-        
+
         sessionManager.stopRecording(
             fileURL: recordingURL.lastPathComponent,
             duration: duration
         )
-        
+
         // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
+    }
+
+    private func handleKeepRecording() {
+        sessionManager.keepRecording()
+
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    private func handleReRecord() {
+        sessionManager.discardRecording()
+
+        // Start recording again after a brief delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            handleStartRecording()
+        }
+    }
+
+    private func handleDiscardRecording() {
+        sessionManager.discardRecording()
     }
     
     private func finishSession() async {
@@ -970,15 +1036,23 @@ struct QUClipCard: View {
                     onIdentify()
                 }
 
-                // Action button
-                Button(action: onIdentify) {
-                    Image(systemName: clip.isIdentified ? "pencil" : "music.note.list")
+                // Action menu button
+                Menu {
+                    Button(action: onIdentify) {
+                        Label("Edit", systemImage: "pencil")
+                    }
+
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(clip.isIdentified ? .white.opacity(0.6) : .purple)
+                        .foregroundStyle(.white.opacity(0.6))
                         .frame(width: 40, height: 40)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(clip.isIdentified ? 0.1 : 0.15))
+                                .fill(Color.white.opacity(0.1))
                         )
                 }
             }
@@ -1005,11 +1079,6 @@ struct QUClipCard: View {
                         lineWidth: 1
                     )
             )
-            .contextMenu {
-                Button(role: .destructive, action: onDelete) {
-                    Label("Delete", systemImage: "trash")
-                }
-            }
         }
     }
 }
@@ -1044,6 +1113,183 @@ struct QUFloatingRecordButton: View {
             )
         }
         .buttonStyle(ScaleButtonStyle())
+    }
+}
+
+// MARK: - Review Recording Overlay
+
+struct QUReviewOverlay: View {
+    let fileURL: String
+    let duration: TimeInterval
+    let onKeep: () -> Void
+    let onReRecord: () -> Void
+    let onDiscard: () -> Void
+
+    @StateObject private var audioPlayer = SimpleAudioPlayer()
+
+    private var formattedDuration: String {
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    var body: some View {
+        VStack {
+            Spacer()
+
+            VStack(spacing: 30) {
+                // Recording complete indicator
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.green)
+
+                    Text("RECORDING COMPLETE")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .tracking(2)
+                        .foregroundStyle(.white)
+                }
+
+                // Duration display
+                Text(formattedDuration)
+                    .font(.system(size: 48, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+
+                // Play button
+                Button(action: {
+                    if audioPlayer.isPlaying {
+                        audioPlayer.stop()
+                    } else {
+                        audioPlayer.play(fileURL: fileURL)
+                    }
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 80, height: 80)
+                            .shadow(color: .purple.opacity(0.5), radius: 15, y: 8)
+
+                        Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 32, weight: .medium))
+                            .foregroundStyle(.white)
+                            .offset(x: audioPlayer.isPlaying ? 0 : 3)
+                    }
+                }
+                .buttonStyle(ScaleButtonStyle())
+
+                // Action buttons
+                HStack(spacing: 16) {
+                    // Re-record button
+                    Button(action: {
+                        audioPlayer.stop()
+                        onReRecord()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Re-record")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 14)
+                        .background(
+                            Capsule()
+                                .fill(Color.orange.opacity(0.3))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.orange, lineWidth: 2)
+                                )
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+
+                    // Keep button
+                    Button(action: {
+                        audioPlayer.stop()
+                        onKeep()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("Keep")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 30)
+                        .padding(.vertical, 14)
+                        .background(
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.green, Color(red: 0, green: 0.7, blue: 0)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .shadow(color: .green.opacity(0.5), radius: 10, y: 5)
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                }
+
+                // Discard button (subtle)
+                Button(action: {
+                    audioPlayer.stop()
+                    onDiscard()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                            .font(.caption)
+                        Text("Discard")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.red.opacity(0.7))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(Color.red.opacity(0.1))
+                    )
+                }
+            }
+            .padding(.vertical, 40)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 30)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.9),
+                                Color.black.opacity(0.7)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 30)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.green.opacity(0.5), .green.opacity(0.2)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+            )
+            .padding(.horizontal, 20)
+            .padding(.bottom, 40)
+        }
     }
 }
 
@@ -1173,20 +1419,15 @@ struct QUIdentifySheet: View {
     let clip: QUClip
     @ObservedObject var viewModel: MusicViewModel
     let onIdentify: (QUClip) -> Void
-    
+
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedSong: MTSong?
     @State private var selectedPartName: String = ""
     @State private var showingSongPicker = false
-    @State private var customSongTitle: String = ""
-    @State private var customSongArtist: String = ""
-    
+
     private var canSave: Bool {
-        if let song = selectedSong {
-            return !selectedPartName.isEmpty
-        } else {
-            return !customSongTitle.isEmpty && !customSongArtist.isEmpty && !selectedPartName.isEmpty
-        }
+        selectedSong != nil && !selectedPartName.isEmpty
     }
     
     var body: some View {
@@ -1205,24 +1446,24 @@ struct QUIdentifySheet: View {
                             Text("Song")
                                 .font(.headline)
                                 .foregroundStyle(.white)
-                            
+
                             if let song = selectedSong {
                                 HStack(spacing: 12) {
                                     AlbumArtView(song: song, size: 50)
-                                    
+
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(song.title)
                                             .font(.subheadline)
                                             .fontWeight(.bold)
                                             .foregroundStyle(.white)
-                                        
+
                                         Text(song.artist)
                                             .font(.caption)
                                             .foregroundStyle(.white.opacity(0.6))
                                     }
-                                    
+
                                     Spacer()
-                                    
+
                                     Button(action: { selectedSong = nil }) {
                                         Image(systemName: "xmark.circle.fill")
                                             .foregroundStyle(.white.opacity(0.6))
@@ -1241,7 +1482,7 @@ struct QUIdentifySheet: View {
                                 Button(action: { showingSongPicker = true }) {
                                     HStack {
                                         Image(systemName: "magnifyingglass")
-                                        Text("Select existing song")
+                                        Text("Search for song")
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.caption)
@@ -1252,19 +1493,6 @@ struct QUIdentifySheet: View {
                                         RoundedRectangle(cornerRadius: 12)
                                             .fill(Color.white.opacity(0.08))
                                     )
-                                }
-                                
-                                Text("OR")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.4))
-                                    .frame(maxWidth: .infinity)
-                                
-                                VStack(spacing: 12) {
-                                    TextField("Song title", text: $customSongTitle)
-                                        .textFieldStyle(QUTextFieldStyle())
-                                    
-                                    TextField("Artist", text: $customSongArtist)
-                                        .textFieldStyle(QUTextFieldStyle())
                                 }
                             }
                         }
@@ -1339,11 +1567,47 @@ struct QUIdentifySheet: View {
                 }
             }
             .sheet(isPresented: $showingSongPicker) {
-                QUSongPickerSheet(
+                SongPickerSheet(
                     songs: viewModel.songs,
-                    onSelect: { song in
+                    selectedSong: $selectedSong,
+                    onSelectSong: { song in
                         selectedSong = song
+                        selectedPartName = ""
                         showingSongPicker = false
+                    },
+                    onSelectNewSong: { suggestion in
+                        Task {
+                            // Check if song already exists
+                            if let existingSong = viewModel.songs.first(where: {
+                                $0.title == suggestion.title && $0.artist == suggestion.artist
+                            }) {
+                                selectedSong = existingSong
+                                selectedPartName = ""
+                                showingSongPicker = false
+                                return
+                            }
+
+                            // Create new song without parts
+                            await viewModel.addOrUpdateSong(
+                                context: modelContext,
+                                title: suggestion.title,
+                                artist: suggestion.artist,
+                                albumColor: .purple,
+                                partName: nil,
+                                partStatus: .learning,
+                                artworkURL: suggestion.artworkURL?.absoluteString
+                            )
+
+                            // Select the newly created song
+                            if let newSong = viewModel.songs.first(where: {
+                                $0.title == suggestion.title && $0.artist == suggestion.artist
+                            }) {
+                                selectedSong = newSong
+                                selectedPartName = ""
+                            }
+
+                            showingSongPicker = false
+                        }
                     }
                 )
             }
@@ -1351,19 +1615,14 @@ struct QUIdentifySheet: View {
     }
     
     private func handleSave() {
+        guard let song = selectedSong else { return }
+
         var updatedClip = clip
-        
-        if let song = selectedSong {
-            updatedClip.songId = song.id
-            updatedClip.songTitle = song.title
-            updatedClip.songArtist = song.artist
-        } else {
-            updatedClip.songTitle = customSongTitle
-            updatedClip.songArtist = customSongArtist
-        }
-        
+        updatedClip.songId = song.id
+        updatedClip.songTitle = song.title
+        updatedClip.songArtist = song.artist
         updatedClip.partName = selectedPartName
-        
+
         onIdentify(updatedClip)
         dismiss()
     }
@@ -1425,95 +1684,6 @@ struct QUClipPreview: View {
     }
 }
 
-// MARK: - Song Picker Sheet
-
-struct QUSongPickerSheet: View {
-    let songs: [MTSong]
-    let onSelect: (MTSong) -> Void
-    
-    @Environment(\.dismiss) private var dismiss
-    @State private var searchText = ""
-    
-    private var filteredSongs: [MTSong] {
-        if searchText.isEmpty {
-            return songs
-        } else {
-            return songs.filter {
-                $0.title.localizedCaseInsensitiveContains(searchText) ||
-                $0.artist.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(red: 0.02, green: 0.04, blue: 0.07)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Search bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(.white.opacity(0.5))
-                        
-                        TextField("Search songs", text: $searchText)
-                            .foregroundStyle(.white)
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.1))
-                    )
-                    .padding()
-                    
-                    // Songs list
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
-                            ForEach(filteredSongs) { song in
-                                Button(action: { onSelect(song) }) {
-                                    HStack(spacing: 12) {
-                                        AlbumArtView(song: song, size: 50)
-                                        
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(song.title)
-                                                .font(.subheadline)
-                                                .fontWeight(.bold)
-                                                .foregroundStyle(.white)
-                                            
-                                            Text(song.artist)
-                                                .font(.caption)
-                                                .foregroundStyle(.white.opacity(0.6))
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundStyle(.white.opacity(0.3))
-                                    }
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.white.opacity(0.05))
-                                    )
-                                }
-                            }
-                        }
-                        .padding()
-                    }
-                }
-            }
-            .navigationTitle("Select Song")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-        }
-    }
-}
 
 // MARK: - Text Field Style
 
