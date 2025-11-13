@@ -37,6 +37,7 @@ struct RecordingView: View {
     @State private var showingPartPicker = false
     @State private var showingNotes = false
     @State private var showingTools = false
+    @State private var showingQuickUpload = false
 
     // Initialize with optional preselected song and part
     init(viewModel: MusicViewModel, preselectedSong: MTSong? = nil, preselectedPart: MTSongPart? = nil) {
@@ -100,7 +101,17 @@ struct RecordingView: View {
                     }
                     .disabled(recordingPhase == .recording)
                     .opacity(recordingPhase == .recording ? 0.3 : 1.0)
-                    
+
+                    Button {
+                        showingQuickUpload = true
+                    } label: {
+                        Image(systemName: "waveform.badge.plus")
+                            .font(.title2)
+                            .foregroundStyle(.purple.opacity(0.9))
+                    }
+                    .disabled(recordingPhase == .recording)
+                    .opacity(recordingPhase == .recording ? 0.3 : 1.0)
+
                     Button {
                         showingTools = true
                     } label: {
@@ -174,8 +185,10 @@ struct RecordingView: View {
                             .transition(.scale.combined(with: .opacity))
                         } else {
                             // Placeholder when no song selected
-                            EmptyStateVisual()
-                                .transition(.scale.combined(with: .opacity))
+                            EmptyStateVisual(onQuickUpload: {
+                                showingQuickUpload = true
+                            })
+                            .transition(.scale.combined(with: .opacity))
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -381,6 +394,9 @@ struct RecordingView: View {
                 backingTrackRecording = recording
                 showingBackingTrackPicker = false
             }
+        }
+        .fullScreenCover(isPresented: $showingQuickUpload) {
+            QuickUploadView(viewModel: viewModel)
         }
         .animation(.easeInOut(duration: 0.2), value: recordingPhase)
         .animation(.easeInOut(duration: 0.2), value: isCountingDown)
@@ -732,10 +748,12 @@ struct DynamicVisualSection: View {
 
 // MARK: - Empty State Visual
 struct EmptyStateVisual: View {
+    var onQuickUpload: (() -> Void)?
+
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
-            
+
             ZStack {
                 Circle()
                     .fill(
@@ -750,7 +768,7 @@ struct EmptyStateVisual: View {
                         )
                     )
                     .frame(width: 200, height: 200)
-                
+
                 Image(systemName: "music.note")
                     .font(.system(size: 80))
                     .foregroundStyle(
@@ -761,20 +779,101 @@ struct EmptyStateVisual: View {
                         )
                     )
             }
-            
+
             VStack(spacing: 8) {
                 Text("Select a song to begin")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white.opacity(0.6))
-                
+
                 Text("Choose from your collection or search for new songs")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.4))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 40)
-            
+
+            // Quick Upload Button
+            if let onQuickUpload = onQuickUpload {
+                VStack(spacing: 12) {
+                    Divider()
+                        .background(Color.white.opacity(0.1))
+                        .padding(.horizontal, 60)
+
+                    Text("OR")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white.opacity(0.3))
+
+                    Button(action: onQuickUpload) {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.purple, .pink],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 50, height: 50)
+
+                                Image(systemName: "waveform.badge.plus")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            .shadow(color: .purple.opacity(0.4), radius: 8, y: 4)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Quick Upload Session")
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+
+                                Text("Record multiple songs at once")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.4))
+                        }
+                        .padding(16)
+                        .frame(maxWidth: 340)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.purple.opacity(0.15),
+                                            Color.pink.opacity(0.1)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [.purple.opacity(0.5), .pink.opacity(0.3)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                        )
+                        .shadow(color: .purple.opacity(0.2), radius: 12, y: 6)
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                }
+                .padding(.top, 8)
+            }
+
             Spacer()
         }
     }
