@@ -356,8 +356,8 @@ struct ModernSongDetailView: View {
                                         Task {
                                             await viewModel.deletePart(
                                                 context: modelContext,
-                                                songId: song.id,
-                                                partId: group.part.id
+                                                song: song,
+                                                part: group.part
                                             )
                                         }
                                     }
