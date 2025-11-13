@@ -51,9 +51,14 @@ class QuickUploadSessionManager: ObservableObject {
     @Published var isRecording = false
     @Published var recordingTime: TimeInterval = 0
     @Published var showingReview = false
-    
+    @Published var isCountingDown = false
+    @Published var countdownValue: Int = 3
+    @Published var countdownEnabled: Bool = true
+
     private let sessionKey = "quick_upload_session"
+    private let countdownEnabledKey = "qu_countdown_enabled"
     private var recordingTimer: Timer?
+    private var countdownTimer: Timer?
     
     init() {
         // Load existing session or create new one
@@ -63,6 +68,14 @@ class QuickUploadSessionManager: ObservableObject {
         } else {
             self.session = QUSession()
         }
+
+        // Load countdown preference
+        self.countdownEnabled = UserDefaults.standard.object(forKey: countdownEnabledKey) as? Bool ?? true
+    }
+
+    func toggleCountdown() {
+        countdownEnabled.toggle()
+        UserDefaults.standard.set(countdownEnabled, forKey: countdownEnabledKey)
     }
     
     func saveSession() {
@@ -95,10 +108,43 @@ class QuickUploadSessionManager: ObservableObject {
         saveSession()
     }
     
+    func startCountdown(onComplete: @escaping () -> Void) {
+        guard countdownEnabled else {
+            onComplete()
+            return
+        }
+
+        isCountingDown = true
+        countdownValue = 3
+
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+
+            if self.countdownValue > 1 {
+                self.countdownValue -= 1
+            } else {
+                timer.invalidate()
+                self.isCountingDown = false
+                self.countdownTimer = nil
+                onComplete()
+            }
+        }
+    }
+
+    func cancelCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        isCountingDown = false
+        countdownValue = 3
+    }
+
     func startRecording() {
         isRecording = true
         recordingTime = 0
-        
+
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.recordingTime += 0.1
         }
@@ -181,7 +227,11 @@ struct QuickUploadView: View {
                         }
                     },
                     canFinish: canFinish,
-                    progress: sessionManager.progress
+                    progress: sessionManager.progress,
+                    countdownEnabled: sessionManager.countdownEnabled,
+                    onToggleCountdown: {
+                        sessionManager.toggleCountdown()
+                    }
                 )
                 
                 // Main Content
@@ -239,6 +289,17 @@ struct QuickUploadView: View {
                 Spacer()
             }
             
+            // Countdown overlay
+            if sessionManager.isCountingDown {
+                QUCountdownOverlay(
+                    countdownValue: sessionManager.countdownValue,
+                    onCancel: {
+                        sessionManager.cancelCountdown()
+                    }
+                )
+                .transition(.opacity)
+            }
+
             // Recording overlay
             if sessionManager.isRecording {
                 QURecordingOverlay(
@@ -248,9 +309,9 @@ struct QuickUploadView: View {
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            
+
             // Floating record button
-            if !sessionManager.isRecording && !sessionManager.session.clips.isEmpty {
+            if !sessionManager.isRecording && !sessionManager.isCountingDown && !sessionManager.session.clips.isEmpty {
                 VStack {
                     Spacer()
                     QUFloatingRecordButton(onTap: handleStartRecording)
@@ -291,13 +352,16 @@ struct QuickUploadView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: sessionManager.isRecording)
+        .animation(.easeInOut(duration: 0.3), value: sessionManager.isCountingDown)
     }
-    
+
     // MARK: - Actions
-    
+
     private func handleStartRecording() {
-        sessionManager.startRecording()
-        audioRecorder.startRecording()
+        sessionManager.startCountdown {
+            sessionManager.startRecording()
+            audioRecorder.startRecording()
+        }
     }
     
     private func handleStopRecording() {
@@ -410,6 +474,76 @@ struct QuickUploadView: View {
     }
 }
 
+// MARK: - Countdown Overlay
+
+struct QUCountdownOverlay: View {
+    let countdownValue: Int
+    let onCancel: () -> Void
+
+    @State private var scaleEffect: CGFloat = 0.5
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.9)
+                .ignoresSafeArea()
+
+            VStack(spacing: 40) {
+                Text("Get Ready!")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+
+                ZStack {
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [.purple, .pink],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 8
+                        )
+                        .frame(width: 180, height: 180)
+
+                    Text("\(countdownValue)")
+                        .font(.system(size: 80, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.purple, .pink],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .scaleEffect(scaleEffect)
+                }
+
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 30)
+                        .padding(.vertical, 14)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.2))
+                        )
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                scaleEffect = 1.0
+            }
+        }
+        .onChange(of: countdownValue) { oldValue, newValue in
+            scaleEffect = 0.5
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                scaleEffect = 1.0
+            }
+        }
+    }
+}
+
 // MARK: - Top Bar
 
 struct QUTopBar: View {
@@ -417,6 +551,8 @@ struct QUTopBar: View {
     let onFinish: () -> Void
     let canFinish: Bool
     let progress: Double
+    let countdownEnabled: Bool
+    let onToggleCountdown: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -431,23 +567,35 @@ struct QUTopBar: View {
                     }
                     .foregroundStyle(.white.opacity(0.7))
                 }
-                
+
                 Spacer()
-                
+
                 VStack(spacing: 2) {
                     Text("Quick Upload")
                         .font(.headline)
                         .foregroundStyle(.white)
-                    
+
                     if progress > 0 {
                         Text("\(Int(progress * 100))% Complete")
                             .font(.caption2)
                             .foregroundStyle(.purple.opacity(0.8))
                     }
                 }
-                
+
                 Spacer()
-                
+
+                // Countdown toggle
+                Button(action: onToggleCountdown) {
+                    Image(systemName: countdownEnabled ? "timer" : "timer.slash")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(countdownEnabled ? .purple : .white.opacity(0.4))
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(countdownEnabled ? 0.15 : 0.08))
+                        )
+                }
+
                 Button(action: onFinish) {
                     HStack(spacing: 6) {
                         Text("Finish")
@@ -710,21 +858,21 @@ struct QUClipCard: View {
     let clip: QUClip
     let onIdentify: () -> Void
     let onDelete: () -> Void
-    
+
     @StateObject private var audioPlayer = SimpleAudioPlayer()
-    
+
     private var formattedDuration: String {
         let minutes = Int(clip.duration) / 60
         let seconds = Int(clip.duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
-    
+
     private var formattedTime: String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: clip.date)
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -748,41 +896,41 @@ struct QUClipCard: View {
                                 )
                             )
                             .frame(width: 48, height: 48)
-                        
+
                         Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.white)
                             .offset(x: audioPlayer.isPlaying ? 0 : 2)
                     }
                 }
-                
-                // Info
+
+                // Info - tappable to identify
                 VStack(alignment: .leading, spacing: 4) {
                     if clip.isIdentified, let title = clip.songTitle {
                         HStack(spacing: 6) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.caption)
                                 .foregroundStyle(.green)
-                            
+
                             Text(title)
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
                         }
-                        
+
                         HStack(spacing: 4) {
                             if let artist = clip.songArtist {
                                 Text(artist)
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.6))
                             }
-                            
+
                             if let partName = clip.partName {
                                 Text("•")
                                     .font(.caption2)
                                     .foregroundStyle(.white.opacity(0.3))
-                                
+
                                 Text(partName)
                                     .font(.caption)
                                     .foregroundStyle(.purple)
@@ -793,18 +941,18 @@ struct QUClipCard: View {
                             Image(systemName: "clock.fill")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
-                            
+
                             Text("Tap to identify")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white.opacity(0.7))
                         }
-                        
+
                         Text("Recorded at \(formattedTime)")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.5))
                     }
-                    
+
                     HStack(spacing: 6) {
                         Image(systemName: "waveform")
                             .font(.caption2)
@@ -814,9 +962,12 @@ struct QUClipCard: View {
                     }
                     .foregroundStyle(.purple.opacity(0.8))
                 }
-                
-                Spacer()
-                
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onIdentify()
+                }
+
                 // Action button
                 Button(action: onIdentify) {
                     Image(systemName: clip.isIdentified ? "pencil" : "music.note.list")
