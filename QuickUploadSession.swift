@@ -1418,7 +1418,6 @@ struct QURecordingOverlay: View {
 struct QUIdentifySheet: View {
     let clip: QUClip
     @ObservedObject var viewModel: MusicViewModel
-    @Environment(\.modelContext) private var modelContext
     let onIdentify: (QUClip) -> Void
 
     @Environment(\.dismiss) private var dismiss
