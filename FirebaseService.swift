@@ -1,17 +1,24 @@
+//
+//  FirebaseService.swift
+//  JamSeshNew
+//
+//  Created by Adam Faith on 2025-12-08.
+//
+
 import Foundation
-// UNCOMMENT THESE AFTER ADDING FIREBASE PACKAGE IN XCODE:
-// import FirebaseAuth
-// import FirebaseFirestore
-// import FirebaseStorage
+import FirebaseAuth
+import FirebaseFirestore
+import FirebaseStorage
+internal import Combine
 
 /// Firebase service manager for handling authentication, database, and storage operations
 class FirebaseService: ObservableObject {
     static let shared = FirebaseService()
 
-    // UNCOMMENT THESE AFTER ADDING FIREBASE PACKAGE:
-    // private let auth = Auth.auth()
-    // private let db = Firestore.firestore()
-    // private let storage = Storage.storage()
+  
+    private let auth = Auth.auth()
+    private let db = Firestore.firestore()
+    private let storage = Storage.storage()
 
     @Published var currentUser: String? = nil
     @Published var isAuthenticated = false
@@ -24,78 +31,77 @@ class FirebaseService: ObservableObject {
     // MARK: - Authentication
 
     func checkAuthStatus() {
-        // UNCOMMENT AFTER ADDING FIREBASE:
-        // if let user = auth.currentUser {
-        //     self.currentUser = user.uid
-        //     self.isAuthenticated = true
-        // }
+        
+        if let user = auth.currentUser {
+            self.currentUser = user.uid
+             self.isAuthenticated = true
+         }
     }
 
     func signIn(email: String, password: String) async throws {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // let result = try await auth.signIn(withEmail: email, password: password)
-        // await MainActor.run {
-        //     self.currentUser = result.user.uid
-        //     self.isAuthenticated = true
-        // }
+        
+         let result = try await auth.signIn(withEmail: email, password: password)
+         await MainActor.run {
+             self.currentUser = result.user.uid
+             self.isAuthenticated = true
+         }
     }
 
     func signUp(email: String, password: String) async throws {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // let result = try await auth.createUser(withEmail: email, password: password)
-        // await MainActor.run {
-        //     self.currentUser = result.user.uid
-        //     self.isAuthenticated = true
-        // }
+        
+         let result = try await auth.createUser(withEmail: email, password: password)
+         await MainActor.run {
+             self.currentUser = result.user.uid
+             self.isAuthenticated = true
+         }
     }
 
     func signOut() throws {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // try auth.signOut()
-        // self.currentUser = nil
-        // self.isAuthenticated = false
+    
+         try auth.signOut()
+         self.currentUser = nil
+         self.isAuthenticated = false
     }
 
     // MARK: - Firestore Database
 
     func saveData<T: Encodable>(collection: String, documentId: String, data: T) async throws {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // try db.collection(collection).document(documentId).setData(from: data)
+        
+         try db.collection(collection).document(documentId).setData(from: data)
     }
 
     func getData<T: Decodable>(collection: String, documentId: String) async throws -> T {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // let document = try await db.collection(collection).document(documentId).getDocument()
-        // return try document.data(as: T.self)
+         let document = try await db.collection(collection).document(documentId).getDocument()
+         return try document.data(as: T.self)
         throw NSError(domain: "FirebaseService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Firebase not configured"])
     }
 
     func deleteData(collection: String, documentId: String) async throws {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // try await db.collection(collection).document(documentId).delete()
+
+         try await db.collection(collection).document(documentId).delete()
     }
 
     // MARK: - Storage
 
     func uploadFile(path: String, data: Data) async throws -> URL {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // let storageRef = storage.reference().child(path)
-        // _ = try await storageRef.putDataAsync(data)
-        // return try await storageRef.downloadURL()
+        
+         let storageRef = storage.reference().child(path)
+         _ = try await storageRef.putDataAsync(data)
+         return try await storageRef.downloadURL()
         throw NSError(domain: "FirebaseService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Firebase not configured"])
     }
 
     func downloadFile(path: String) async throws -> Data {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // let storageRef = storage.reference().child(path)
-        // return try await storageRef.data(maxSize: 50 * 1024 * 1024) // 50MB max
+    
+         let storageRef = storage.reference().child(path)
+         return try await storageRef.data(maxSize: 50 * 1024 * 1024) // 50MB max
         throw NSError(domain: "FirebaseService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Firebase not configured"])
     }
 
     func deleteFile(path: String) async throws {
-        // UNCOMMENT AND IMPLEMENT AFTER ADDING FIREBASE:
-        // let storageRef = storage.reference().child(path)
-        // try await storageRef.delete()
+      
+        let storageRef = storage.reference().child(path)
+        try await storageRef.delete()
     }
 }
 
