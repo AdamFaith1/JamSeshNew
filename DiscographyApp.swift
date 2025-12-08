@@ -1,16 +1,14 @@
 import SwiftUI
 import SwiftData
-// UNCOMMENT THESE AFTER ADDING FIREBASE PACKAGE IN XCODE:
-// import FirebaseCore
-// import FirebaseAuth
-// import FirebaseFirestore
+import FirebaseCore
+import FirebaseAuth
+import FirebaseFirestore
 
 @main
 struct JamSeshApp: App {
 
     init() {
-        // UNCOMMENT THIS AFTER ADDING FIREBASE PACKAGE:
-        // FirebaseApp.configure()
+        FirebaseApp.configure()
     }
 
     var body: some Scene {

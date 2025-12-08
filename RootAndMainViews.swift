@@ -117,7 +117,7 @@ struct TabContent: View {
                 }
                 
             case .social:
-                SocialPlaceholderView()
+                SocialView()
                 
             case .studio:
                 StudioComposerView(viewModel: viewModel)  // CHANGED THIS LINE
