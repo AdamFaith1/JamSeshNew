@@ -70,6 +70,7 @@
 		7C9A753F2EC0EDCF00F6F261 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		7C9A75412EC24CF900F6F261 /* StandardClipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardClipView.swift; sourceTree = "<group>"; };
 		7CAEBC482EE7654D00CE01AC /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		7CAEBC4B2EE7672500CE01AC /* Untitled 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Untitled 2.swift"; sourceTree = "<group>"; };
 		7CF3ADE22EC57F9A00590EDF /* QuickUploadSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickUploadSession.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -103,6 +104,7 @@
 				7C284E412EBEE54700E01278 /* AddSongSheet.swift */,
 				7C284E422EBEE54700E01278 /* Assets 2.xcassets */,
 				7C284E432EBEE54700E01278 /* CollectionViews.swift */,
+				7CAEBC4B2EE7672500CE01AC /* Untitled 2.swift */,
 				7CAEBC482EE7654D00CE01AC /* GoogleService-Info.plist */,
 				7C284E452EBEE54700E01278 /* CustomTabBar.swift */,
 				7C284E462EBEE54700E01278 /* DiscographyApp.swift */,
