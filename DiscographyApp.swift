@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-// FIREBASE
+
 import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
