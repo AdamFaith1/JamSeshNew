@@ -170,12 +170,44 @@ struct AuthenticationView: View {
                     isLoading = false
                     return
                 }
+
+                // Validate password length (Firebase requirement)
+                guard password.count >= 6 else {
+                    errorMessage = "Password must be at least 6 characters"
+                    isLoading = false
+                    return
+                }
+
+                print("🔐 Attempting sign up with email: \(email)")
                 try await firebaseService.signUp(email: email, password: password, username: username)
+                print("✅ Sign up successful")
             } else {
+                print("🔐 Attempting sign in with email: \(email)")
                 try await firebaseService.signIn(email: email, password: password)
+                print("✅ Sign in successful")
             }
-        } catch {
-            errorMessage = error.localizedDescription
+        } catch let error as NSError {
+            print("❌ Firebase Auth Error: \(error.localizedDescription)")
+            print("❌ Error code: \(error.code)")
+            print("❌ Error domain: \(error.domain)")
+
+            // Provide user-friendly error messages
+            switch error.code {
+            case 17007: // Email already in use
+                errorMessage = "This email is already registered. Try signing in instead."
+            case 17008, 17011: // Invalid email
+                errorMessage = "Invalid email address format"
+            case 17009: // Wrong password
+                errorMessage = "Incorrect password. Please try again."
+            case 17011: // User not found
+                errorMessage = "No account found with this email. Try signing up."
+            case 17020: // Network error
+                errorMessage = "Network error. Check your internet connection."
+            case 17999: // Internal error
+                errorMessage = "Firebase connection error. Make sure:\n1. You're connected to the internet\n2. Email/Password auth is enabled in Firebase Console\n3. Your Firebase project is active"
+            default:
+                errorMessage = "Authentication failed: \(error.localizedDescription)"
+            }
         }
 
         isLoading = false
