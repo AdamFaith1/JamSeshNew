@@ -732,7 +732,7 @@ struct DynamicVisualSection: View {
             
             Spacer()
         }
-        .onChange(of: isRecording) { newValue in
+        .onChange(of: isRecording) { oldValue, newValue in
             if newValue {
                 withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
                     pulseScale = 1.05
@@ -990,7 +990,7 @@ struct CoolRecordButton: View {
         .buttonStyle(ScaleButtonStyle())
         .disabled(isCountingDown)
         .opacity(isCountingDown ? 0.5 : 1.0)
-        .onChange(of: isRecording) { newValue in
+        .onChange(of: isRecording) { oldValue, newValue in
             if newValue {
                 pulseAnimation = true
                 withAnimation {
@@ -1054,7 +1054,7 @@ struct LargePlayButton: View {
             }
         }
         .buttonStyle(ScaleButtonStyle())
-        .onChange(of: isPlaying) { newValue in
+        .onChange(of: isPlaying) { oldValue, newValue in
             if newValue {
                 withAnimation(.easeOut(duration: 1.2).repeatForever(autoreverses: false)) {
                     pulseAnimation = true
@@ -1526,7 +1526,7 @@ struct CountdownView: View {
                     scale = 1.0
                 }
             }
-            .onChange(of: countdown) { _ in
+            .onChange(of: countdown) { oldValue, newValue in
                 scale = 0.5
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     scale = 1.2

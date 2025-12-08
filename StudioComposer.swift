@@ -569,7 +569,7 @@ struct TrackInspector: View {
                 
                 Slider(value: $volume, in: 0...1)
                     .tint(.purple)
-                    .onChange(of: volume) { newValue in
+                    .onChange(of: volume) { oldValue, newValue in
                         var updated = track
                         updated.volume = newValue
                         onUpdate(updated)

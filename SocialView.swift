@@ -517,7 +517,7 @@ struct FriendsView: View {
 
                 TextField("Search users...", text: $searchQuery)
                     .foregroundStyle(.white)
-                    .onChange(of: searchQuery) { newValue in
+                    .onChange(of: searchQuery) { oldValue, newValue in
                         Task {
                             await searchUsers()
                         }

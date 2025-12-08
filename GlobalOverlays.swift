@@ -67,7 +67,7 @@ struct GlobalOverlaysModifier: ViewModifier {
                 .allowsHitTesting(activeOverlay != nil)
                 .animation(.spring(response: 0.4, dampingFraction: 0.7), value: activeOverlay != nil)
             )
-            .onChange(of: viewModel.notificationMessage) { message in
+            .onChange(of: viewModel.notificationMessage) { oldMessage, message in
                 guard let msg = message else { return }
                 handleNotification(msg)
             }

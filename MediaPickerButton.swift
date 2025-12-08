@@ -1,11 +1,11 @@
 import SwiftUI
 internal import PhotosUI
 
-enum MediaType {
+enum MediaType: Sendable {
     case photo
     case video
     case both
-    
+
     var pickerFilter: PHPickerFilter {
         switch self {
         case .photo:
@@ -70,7 +70,7 @@ struct MediaPickerButton: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.purple.opacity(0.3)))
             .cornerRadius(12)
         }
-        .onChange(of: selectedPhotoItem) { newItem in
+        .onChange(of: selectedPhotoItem) { oldItem, newItem in
             Task {
                 if mediaType == .video || mediaType == .both {
                     // Try loading as video first
@@ -81,7 +81,7 @@ struct MediaPickerButton: View {
                         return
                     }
                 }
-                
+
                 // Load as image with proper error handling and color space conversion
                 if let data = try? await newItem?.loadTransferable(type: Data.self) {
                     // Create image and ensure it's in a compatible color space
@@ -90,12 +90,12 @@ struct MediaPickerButton: View {
                         let format = UIGraphicsImageRendererFormat()
                         format.scale = sourceImage.scale
                         format.opaque = false
-                        
+
                         let renderer = UIGraphicsImageRenderer(size: sourceImage.size, format: format)
                         let normalizedImage = renderer.image { context in
                             sourceImage.draw(in: CGRect(origin: .zero, size: sourceImage.size))
                         }
-                        
+
                         await MainActor.run {
                             selectedImage = normalizedImage
                         }

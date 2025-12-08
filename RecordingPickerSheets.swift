@@ -54,7 +54,7 @@ struct SongPickerSheet: View {
                             .foregroundStyle(.purple.opacity(0.6))
                         TextField("Search for a song...", text: $searchQuery)
                             .foregroundStyle(.white)
-                            .onChange(of: searchQuery) { newValue in
+                            .onChange(of: searchQuery) { oldValue, newValue in
                                 handleSearchQueryChange(newValue)
                             }
                         
