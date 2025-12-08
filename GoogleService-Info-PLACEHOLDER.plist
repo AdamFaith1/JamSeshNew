@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+
+	⚠️ THIS IS A PLACEHOLDER FILE ⚠️
+
+	To get your actual GoogleService-Info.plist:
+
+	1. Go to Firebase Console: https://console.firebase.google.com/
+	2. Select your project (or create a new one)
+	3. Click "Add App" → iOS
+	4. Enter your bundle ID (check Xcode project settings)
+	5. Download the GoogleService-Info.plist file
+	6. Replace this file with the downloaded one
+	7. Make sure to rename it to: GoogleService-Info.plist (remove -PLACEHOLDER)
+	8. In Xcode, make sure it's added to your app target
+
+	-->
+	<key>API_KEY</key>
+	<string>YOUR-API-KEY-HERE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>YOUR-SENDER-ID-HERE</string>
+	<key>GOOGLE_APP_ID</key>
+	<string>YOUR-APP-ID-HERE</string>
+	<key>PROJECT_ID</key>
+	<string>your-project-id</string>
+	<key>STORAGE_BUCKET</key>
+	<string>your-project-id.appspot.com</string>
+</dict>
+</plist>
