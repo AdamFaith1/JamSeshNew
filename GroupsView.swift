@@ -301,7 +301,7 @@ struct CreateGroupView: View {
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
-                        .onChange(of: selectedPhoto) { newValue in
+                        .onChange(of: selectedPhoto) { _, newValue in
                             Task {
                                 if let data = try? await newValue?.loadTransferable(type: Data.self) {
                                     selectedPhotoData = data
@@ -736,7 +736,7 @@ struct AddSongToGroupView: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var firebase = FirebaseService.shared
-    @StateObject private var searchService = SongSearchService()
+    private let searchService = SongSearchService.shared
 
     @State private var searchQuery = ""
     @State private var searchResults: [SongSuggestion] = []
@@ -757,7 +757,7 @@ struct AddSongToGroupView: View {
 
                         TextField("Search for songs...", text: $searchQuery)
                             .foregroundStyle(.white)
-                            .onChange(of: searchQuery) { newValue in
+                            .onChange(of: searchQuery) { _, newValue in
                                 Task { await performSearch(query: newValue) }
                             }
 
@@ -1426,7 +1426,7 @@ struct JamListView: View {
         .task {
             await loadJamSongs()
         }
-        .onChange(of: minimumMembers) { _ in
+        .onChange(of: minimumMembers) { _, _ in
             // Filter will update automatically via computed property
         }
     }
