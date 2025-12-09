@@ -54,7 +54,7 @@ struct SongPickerSheet: View {
                             .foregroundStyle(.purple.opacity(0.6))
                         TextField("Search for a song...", text: $searchQuery)
                             .foregroundStyle(.white)
-                            .onChange(of: searchQuery) { newValue in
+                            .onChange(of: searchQuery) { oldValue, newValue in
                                 handleSearchQueryChange(newValue)
                             }
                         
@@ -174,7 +174,7 @@ struct SongPickerSheet: View {
     
     // MARK: - Existing Songs Section (No Search)
     private var existingSongsSection: some View {
-        Group {
+        SwiftUI.Group {
             if filteredExistingSongs.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "music.note.list")

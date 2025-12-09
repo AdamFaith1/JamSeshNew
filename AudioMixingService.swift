@@ -55,8 +55,8 @@ final class AudioMixingService: NSObject, ObservableObject {
             
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let url = docs.appendingPathComponent(fileURL)
-            
-            guard let asset = try? AVURLAsset(url: url) else { continue }
+
+            let asset = AVURLAsset(url: url)
             
             let compositionTrack = composition.addMutableTrack(
                 withMediaType: .audio,

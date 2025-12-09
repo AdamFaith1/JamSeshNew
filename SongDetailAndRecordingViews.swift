@@ -6,7 +6,7 @@ import UIKit
 
 // MARK: - Recording Manager (Kept for backward compatibility with AudioPlaybackManager)
 @MainActor
-final class RecordingManager: NSObject, ObservableObject {
+final class RecordingManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     @Published var isRecording = false
     @Published var recordingType: MTRecording.RecordingType = .audio
     @Published var currentRecordingDuration: TimeInterval = 0
@@ -137,7 +137,7 @@ final class RecordingManager: NSObject, ObservableObject {
     }
 }
 
-extension RecordingManager: AVAudioRecorderDelegate {
+extension RecordingManager {
     func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         isRecording = false
         stopTimers()

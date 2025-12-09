@@ -18,7 +18,7 @@ struct HeaderView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(viewModel.activeTab == .collection ? "My Music" :
-                         viewModel.activeTab == .studio ? "Studio" : "Jam")
+                         viewModel.activeTab == .groups ? "Groups" : "Jam")
                         .font(.title2).bold()
                         .foregroundStyle(LinearGradient(colors: [.purple.opacity(0.8), .pink.opacity(0.8)], startPoint: .leading, endPoint: .trailing))
                     
