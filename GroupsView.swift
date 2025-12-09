@@ -6,7 +6,8 @@
 //
 
 import SwiftUI
-import PhotosUI
+internal import PhotosUI
+import FirebaseAuth
 
 // MARK: - Main Groups View
 struct GroupsView: View {
