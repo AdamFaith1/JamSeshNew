@@ -300,4 +300,223 @@ class FirebaseService: ObservableObject {
     func deleteData(collection: String, documentId: String) async throws {
         try await db.collection(collection).document(documentId).delete()
     }
+
+    // MARK: - Groups Management
+
+    /// Create a new group
+    func createGroup(_ group: Group) async throws {
+        try db.collection("groups").document(group.id).setData(from: group)
+    }
+
+    /// Update an existing group
+    func updateGroup(_ group: Group) async throws {
+        try db.collection("groups").document(group.id).setData(from: group)
+    }
+
+    /// Delete a group and all its related data
+    func deleteGroup(groupId: String) async throws {
+        // Delete all group songs
+        let songsSnapshot = try await db.collection("groupSongs")
+            .whereField("groupId", isEqualTo: groupId)
+            .getDocuments()
+
+        for doc in songsSnapshot.documents {
+            try await doc.reference.delete()
+        }
+
+        // Delete all progress updates
+        let progressSnapshot = try await db.collection("groupProgress")
+            .whereField("groupId", isEqualTo: groupId)
+            .getDocuments()
+
+        for doc in progressSnapshot.documents {
+            try await doc.reference.delete()
+        }
+
+        // Delete the group itself
+        try await db.collection("groups").document(groupId).delete()
+    }
+
+    /// Get all groups for the current user
+    func getUserGroups() async throws -> [Group] {
+        guard let userId = currentUser?.uid else { return [] }
+
+        let snapshot = try await db.collection("groups")
+            .whereField("memberIds", arrayContains: userId)
+            .order(by: "createdDate", descending: true)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { try $0.data(as: Group.self) }
+    }
+
+    /// Get a specific group by ID
+    func getGroup(groupId: String) async throws -> Group {
+        let document = try await db.collection("groups").document(groupId).getDocument()
+        return try document.data(as: Group.self)
+    }
+
+    /// Add a member to a group
+    func addGroupMember(groupId: String, userId: String) async throws {
+        try await db.collection("groups").document(groupId).updateData([
+            "memberIds": FieldValue.arrayUnion([userId])
+        ])
+    }
+
+    /// Remove a member from a group
+    func removeGroupMember(groupId: String, userId: String) async throws {
+        try await db.collection("groups").document(groupId).updateData([
+            "memberIds": FieldValue.arrayRemove([userId])
+        ])
+    }
+
+    /// Get profiles for all members of a group
+    func getGroupMembers(group: Group) async throws -> [UserProfile] {
+        guard !group.memberIds.isEmpty else { return [] }
+
+        let snapshot = try await db.collection("users")
+            .whereField(FieldPath.documentID(), in: group.memberIds)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { try $0.data(as: UserProfile.self) }
+    }
+
+    /// Upload group cover photo
+    func uploadGroupCoverPhoto(groupId: String, imageData: Data) async throws -> URL {
+        let path = "groups/\(groupId)/cover.jpg"
+        return try await uploadFile(path: path, data: imageData)
+    }
+
+    // MARK: - Group Songs
+
+    /// Add a song to a group's shared songlist
+    func addSongToGroup(_ song: GroupSong) async throws {
+        try db.collection("groupSongs").document(song.id).setData(from: song)
+    }
+
+    /// Remove a song from a group's songlist
+    func removeSongFromGroup(songId: String) async throws {
+        try await db.collection("groupSongs").document(songId).delete()
+    }
+
+    /// Get all songs in a group's songlist
+    func getGroupSongs(groupId: String) async throws -> [GroupSong] {
+        let snapshot = try await db.collection("groupSongs")
+            .whereField("groupId", isEqualTo: groupId)
+            .order(by: "addedDate", descending: true)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { try $0.data(as: GroupSong.self) }
+    }
+
+    /// Update member progress IDs for a song
+    func updateSongMemberProgress(songId: String, userId: String) async throws {
+        try await db.collection("groupSongs").document(songId).updateData([
+            "memberProgressIds": FieldValue.arrayUnion([userId])
+        ])
+    }
+
+    // MARK: - Group Progress Updates
+
+    /// Post a progress update to a group
+    func addProgressUpdate(_ progress: GroupProgress) async throws {
+        try db.collection("groupProgress").document(progress.id).setData(from: progress)
+
+        // Update the song's member progress list
+        try await updateSongMemberProgress(songId: progress.songId, userId: progress.postedById)
+    }
+
+    /// Delete a progress update
+    func deleteProgressUpdate(progressId: String) async throws {
+        try await db.collection("groupProgress").document(progressId).delete()
+    }
+
+    /// Get all progress updates for a group
+    func getGroupProgress(groupId: String) async throws -> [GroupProgress] {
+        let snapshot = try await db.collection("groupProgress")
+            .whereField("groupId", isEqualTo: groupId)
+            .order(by: "postedDate", descending: true)
+            .limit(to: 100)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { try $0.data(as: GroupProgress.self) }
+    }
+
+    /// Get progress updates for a specific song in a group
+    func getSongProgress(groupId: String, songId: String) async throws -> [GroupProgress] {
+        let snapshot = try await db.collection("groupProgress")
+            .whereField("groupId", isEqualTo: groupId)
+            .whereField("songId", isEqualTo: songId)
+            .order(by: "postedDate", descending: true)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { try $0.data(as: GroupProgress.self) }
+    }
+
+    /// Upload progress video or audio
+    func uploadProgressMedia(progressId: String, data: Data, isVideo: Bool) async throws -> URL {
+        let ext = isVideo ? "mp4" : "m4a"
+        let path = "groupProgress/\(progressId).\(ext)"
+        return try await uploadFile(path: path, data: data)
+    }
+
+    // MARK: - Group Reactions
+
+    /// Add a reaction to a progress update
+    func addReaction(_ reaction: GroupReaction) async throws {
+        // Save the reaction document
+        try db.collection("groupReactions").document(reaction.id).setData(from: reaction)
+
+        // Update the progress update's reaction counts
+        let progressRef = db.collection("groupProgress").document(reaction.progressId)
+        let progressDoc = try await progressRef.getDocument()
+
+        if var progress = try? progressDoc.data(as: GroupProgress.self) {
+            progress.reactionCounts[reaction.emoji, default: 0] += 1
+            try progressRef.setData(from: progress)
+        }
+    }
+
+    /// Remove a reaction from a progress update
+    func removeReaction(_ reaction: GroupReaction) async throws {
+        // Delete the reaction document
+        try await db.collection("groupReactions").document(reaction.id).delete()
+
+        // Update the progress update's reaction counts
+        let progressRef = db.collection("groupProgress").document(reaction.progressId)
+        let progressDoc = try await progressRef.getDocument()
+
+        if var progress = try? progressDoc.data(as: GroupProgress.self) {
+            if let count = progress.reactionCounts[reaction.emoji], count > 0 {
+                progress.reactionCounts[reaction.emoji] = count - 1
+                if progress.reactionCounts[reaction.emoji] == 0 {
+                    progress.reactionCounts.removeValue(forKey: reaction.emoji)
+                }
+                try progressRef.setData(from: progress)
+            }
+        }
+    }
+
+    /// Get all reactions for a progress update
+    func getReactions(progressId: String) async throws -> [GroupReaction] {
+        let snapshot = try await db.collection("groupReactions")
+            .whereField("progressId", isEqualTo: progressId)
+            .order(by: "createdDate", descending: true)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { try $0.data(as: GroupReaction.self) }
+    }
+
+    /// Check if current user has reacted with a specific emoji
+    func hasUserReacted(progressId: String, emoji: String) async throws -> GroupReaction? {
+        guard let userId = currentUser?.uid else { return nil }
+
+        let snapshot = try await db.collection("groupReactions")
+            .whereField("progressId", isEqualTo: progressId)
+            .whereField("userId", isEqualTo: userId)
+            .whereField("emoji", isEqualTo: emoji)
+            .limit(to: 1)
+            .getDocuments()
+
+        return try snapshot.documents.first.flatMap { try $0.data(as: GroupReaction.self) }
+    }
 }

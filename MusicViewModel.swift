@@ -28,7 +28,7 @@ final class MusicViewModel: ObservableObject {
 
     let loopCatalog = LoopCatalogService()
     
-    enum Tab { case home, collection, social, studio }
+    enum Tab { case home, collection, social, groups }
     enum CollectionViewMode { case albums, clips }
     
     enum SortOption {
@@ -43,12 +43,7 @@ final class MusicViewModel: ObservableObject {
     
     var filteredSongs: [MTSong] {
         var filtered = songs
-        
-        // Tab filter
-        if activeTab == .studio {
-            filtered = filtered.filter { $0.parts.contains { $0.status == .learning } }
-        }
-        
+
         // Search filter
         if !searchQuery.isEmpty {
             filtered = filtered.filter {

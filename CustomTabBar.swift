@@ -40,15 +40,15 @@ struct CustomTabBar: View {
                 Spacer()
                     .frame(width: 100)
                 
-                // Studio Tab
+                // Groups Tab
                 TabButton(
-                    icon: "slider.horizontal.3",
-                    title: "Studio",
-                    isActive: activeTab == .studio,
+                    icon: "person.3.fill",
+                    title: "Groups",
+                    isActive: activeTab == .groups,
                     namespace: animation
                 ) {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        activeTab = .studio
+                        activeTab = .groups
                     }
                 }
                 

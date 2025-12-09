@@ -118,9 +118,9 @@ struct TabContent: View {
                 
             case .social:
                 SocialView()
-                
-            case .studio:
-                StudioComposerView(viewModel: viewModel)  // CHANGED THIS LINE
+
+            case .groups:
+                GroupsView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
