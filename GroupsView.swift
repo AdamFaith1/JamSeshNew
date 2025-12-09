@@ -737,7 +737,7 @@ struct AddSongToGroupView: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var firebase = FirebaseService.shared
-    @StateObject private var searchService = SongSearchService()
+    private let searchService = SongSearchService.shared
 
     @State private var searchQuery = ""
     @State private var searchResults: [SongSuggestion] = []
